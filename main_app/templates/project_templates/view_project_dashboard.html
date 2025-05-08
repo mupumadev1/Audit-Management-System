@@ -1,0 +1,165 @@
+{% extends 'base.html' %} {% load static %}
+{% include "main_app/sidebar_template.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Project Dashboard</h1>
+
+    <div class="card shadow-lg mb-4 card- فوق">
+        <div class="card-body">
+            <form id="filter-form" class="row mb-3">
+                <div class="col-md-3 mb-2">
+                    <label for="project-name" class="form-label">Project Name:</label>
+                    <input type="text" id="project-name" name="project_name" class="form-control"
+                        placeholder="Enter Project Name">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="supported-transactions" class="form-label">Supported Transactions:</label>
+                    <input type="number" id="supported-transactions" name="supported_transactions" class="form-control"
+                        placeholder="Enter # of Transactions">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="supported-value" class="form-label">Supported Value:</label>
+                    <input type="number" id="supported-value" name="supported_value" class="form-control"
+                        class="form-control" placeholder="Enter Total Value">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="unsupported-transactions" class="form-label">Unsupported Transactions:</label>
+                    <input type="number" id="unsupported-transactions" name="unsupported_transactions"
+                        class="form-control" placeholder="Enter # of Transactions">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="unsupported-value" class="form-label">Unsupported Value:</label>
+                    <input type="number" id="unsupported-value" name="unsupported_value" class="form-control"
+                        placeholder="Enter Total Value">
+                </div>
+                <div class="col-md-12 mt-2">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <button type="button" class="btn btn-secondary ms-2" id="reset-button">Reset</button>
+                </div>
+            </form>
+
+            <div id="summary-section" class="alert alert-info card-above" role="alert"> </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="project-table">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Supported Transactions</th>
+                            <th>Supported Value</th>
+                            <th>Unsupported Transactions</th>
+                            <th>Unsupported Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div id="no-data" class="alert alert-warning card-above" style="display:none;"> No matching data found.
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const filterForm = document.getElementById('filter-form');
+        const projectTable = document.getElementById('project-table').getElementsByTagName('tbody')[0];
+        const summarySection = document.getElementById('summary-section');
+        const resetButton = document.getElementById('reset-button');
+        const noDataMessage = document.getElementById('no-data');
+
+
+        // Sample project data (replace with actual data from Django)
+        let projectData = [
+            { project_name: "Project Alpha", supported_transactions: 120, supported_value: 25000, unsupported_transactions: 5, unsupported_value: 1000 },
+            { project_name: "Project Beta", supported_transactions: 85, supported_value: 18000, unsupported_transactions: 2, unsupported_value: 500 },
+            { project_name: "Project Gamma", supported_transactions: 200, supported_value: 42000, unsupported_transactions: 8, unsupported_value: 1500 },
+            { project_name: "Project Delta", supported_transactions: 95, supported_value: 19000, unsupported_transactions: 1, unsupported_value: 200 },
+            { project_name: "Project Echo", supported_transactions: 150, supported_value: 30000, unsupported_transactions: 6, unsupported_value: 1100 },
+            { project_name: "Project Fox", supported_transactions: 70, supported_value: 15000, unsupported_transactions: 0, unsupported_value: 0 },
+            { project_name: "Project Golf", supported_transactions: 110, supported_value: 22000, unsupported_transactions: 3, unsupported_value: 600 },
+            { project_name: "Project Hotel", supported_transactions: 180, supported_value: 38000, unsupported_transactions: 7, unsupported_value: 1300 },
+            { project_name: "Project India", supported_transactions: 60, supported_value: 12000, unsupported_transactions: 2, unsupported_value: 400 },
+            { project_name: "Project Juliet", supported_transactions: 130, supported_value: 27000, unsupported_transactions: 4, unsupported_value: 800 },
+        ];
+
+        function displayProjectData(data) {
+            projectTable.innerHTML = ''; // Clear the table
+            if (data.length === 0) {
+                noDataMessage.style.display = 'block';
+                summarySection.innerHTML = '';
+                return;
+            }
+            else {
+                noDataMessage.style.display = 'none';
+            }
+
+            let totalSupportedTransactions = 0;
+            let totalSupportedValue = 0;
+            let totalUnsupportedTransactions = 0;
+            let totalUnsupportedValue = 0;
+
+            data.forEach(project => {
+                let row = projectTable.insertRow();
+                let nameCell = row.insertCell();
+                let supportedTransactionsCell = row.insertCell();
+                let supportedValueCell = row.insertCell();
+                let unsupportedTransactionsCell = row.insertCell();
+                let unsupportedValueCell = row.insertCell();
+
+                nameCell.textContent = project.project_name;
+                supportedTransactionsCell.textContent = project.supported_transactions;
+                supportedValueCell.textContent = 'K' + project.supported_value.toLocaleString('en-US');
+                unsupportedTransactionsCell.textContent = project.unsupported_transactions;
+                unsupportedValueCell.textContent = 'K' + project.unsupported_value.toLocaleString('en-US');
+
+                totalSupportedTransactions += project.supported_transactions;
+                totalSupportedValue += project.supported_value;
+                totalUnsupportedTransactions += project.unsupported_transactions;
+                totalUnsupportedValue += project.unsupported_value;
+            });
+
+            // Display summary
+            summarySection.innerHTML = `
+    <p><strong>Total Supported Transactions:</strong> ${totalSupportedTransactions}</p>
+    <p><strong>Total Supported Value:</strong> K${totalSupportedValue.toLocaleString('en-US')}</p>
+    <p><strong>Total Unsupported Transactions:</strong> ${totalUnsupportedTransactions}</p>
+    <p><strong>Total Unsupported Value:</strong> K${totalUnsupportedValue.toLocaleString('en-US')}</p>
+`;
+        }
+
+        function filterProjects(event) {
+            event.preventDefault();
+
+            const projectName = document.getElementById('project-name').value.toLowerCase();
+            const supportedTransactions = parseInt(document.getElementById('supported-transactions').value) || null;
+            const supportedValue = parseInt(document.getElementById('supported-value').value) || null;
+            const unsupportedTransactions = parseInt(document.getElementById('unsupported-transactions').value) || null;
+            const unsupportedValue = parseInt(document.getElementById('unsupported-value').value) || null;
+
+            const filteredData = projectData.filter(project => {
+                return (
+                    (!projectName || project.project_name.toLowerCase().includes(projectName)) &&
+                    (supportedTransactions === null || project.supported_transactions === supportedTransactions) &&
+                    (supportedValue === null || project.supported_value === supportedValue) &&
+                    (unsupportedTransactions === null || project.unsupported_transactions === unsupportedTransactions) &&
+                    (unsupportedValue === null || project.unsupported_value === unsupportedValue)
+                );
+            });
+            displayProjectData(filteredData);
+        }
+
+        function resetFilters() {
+            filterForm.reset();
+            displayProjectData(projectData); // Show all data
+        }
+
+        filterForm.addEventListener('submit', filterProjects);
+        resetButton.addEventListener('click', resetFilters);
+
+        // Initial display of all data
+        displayProjectData(projectData);
+    });
+</script>
+{% endblock %}

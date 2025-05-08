@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Project Overview</h1>
+
+    <!-- Summary Cards -->
+    <div class="row mb-5 justify-content-center">
+        <div class="col-12">
+            <div class="d-flex flex-nowrap overflow-auto gap-3 pb-2">
+                <div class="card text-white bg-primary shadow flex-grow-1" style="min-width: 220px; width: 25%;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Projects</h5>
+                        <p class="fs-4 mb-0">{{ total_projects }}</p>
+                    </div>
+                </div>
+                <div class="card text-white bg-primary shadow flex-grow-1" style="min-width: 220px; width: 25%;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Supported Transactions</h5>
+                        <p class="fs-4 mb-0">{{ total_supported_transactions }}</p>
+                    </div>
+                </div>
+                <div class="card text-white bg-warning shadow flex-grow-1" style="min-width: 220px; width: 25%;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Unsupported Transactions</h5>
+                        <p class="fs-4 mb-0">{{ total_unsupported_transactions }}</p>
+                    </div>
+                </div>
+                <div class="card text-white bg-success shadow flex-grow-1" style="min-width: 220px; width: 25%;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Supported Value</h5>
+                        <p class="fs-4 mb-0">K{{ total_supported_value|intcomma }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 5 Projects Table -->
+    <div class="card shadow">
+        <div class="card-body">
+            <h4>Recent Projects</h4>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Supported Transactions</th>
+                            <th>Supported Value (K)</th>
+                            <th>Unsupported Transactions</th>
+                            <th>Unsupported Value (K)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in top_projects %}
+                        <tr>
+                            <td>{{ project.project_name }}</td>
+                            <td>{{ project.supported_transactions }}</td>
+                            <td>{{ project.supported_value|intcomma }}</td>
+                            <td>{{ project.unsupported_transactions }}</td>
+                            <td>{{ project.unsupported_value|intcomma }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-end">
+                <a href="{% url 'view_project_dashboard' %}" class="btn btn-outline-primary mt-3">View Full Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Custom styles for cards */
+    .card {
+        transition: transform 0.3s ease;
+        border: none;
+        border-radius: 10px;
+    }
+    
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .card-title {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    /* Make scrollbar more stylish */
+    .overflow-auto::-webkit-scrollbar {
+        height: 6px;
+    }
+    
+    .overflow-auto::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .overflow-auto::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 10px;
+    }
+    
+    .overflow-auto::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .d-flex.flex-nowrap {
+            overflow-x: auto;
+            padding-bottom: 15px;
+        }
+    }
+</style>
+{% endblock %}
