@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{% static 'main_app/css/styles.css' %}">
+</head>
+<body>
+    <header>
+        <h1>Welcome to the Admin Dashboard</h1>
+        <nav>
+            <ul>
+                <li><a href="{% url 'logout' %}">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h2>Admin Controls</h2>
+            <p>Here you can manage users, view reports, and configure settings.</p>
+            <!-- Add more admin functionalities here -->
+        </section>
+    </main>
+    <footer>
+        <p>&copy; {{ current_year }} Your Company Name. All rights reserved.</p>
+    </footer>
+</body>
+</html>
