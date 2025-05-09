@@ -9,8 +9,10 @@
             <form id="filter-form" class="row mb-3">
                 <div class="col-md-3 mb-2">
                     <label for="project-name" class="form-label">Project Name:</label>
-                    <input type="text" id="project-name" name="project_name" class="form-control"
-                        placeholder="Enter Project Name">
+                    <select id="project-name" name="project_name" class="form-select">
+                        <option value="">All Projects</option>
+                        <!-- Project options will be dynamically populated -->
+                    </select>
                 </div>
                 <div class="col-md-3 mb-2">
                     <label for="supported-transactions" class="form-label">Supported Transactions:</label>
@@ -64,25 +66,35 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const filterForm = document.getElementById('filter-form');
+        const projectSelect = document.getElementById('project-name');
         const projectTable = document.getElementById('project-table').getElementsByTagName('tbody')[0];
         const summarySection = document.getElementById('summary-section');
         const resetButton = document.getElementById('reset-button');
         const noDataMessage = document.getElementById('no-data');
 
-
         // Sample project data (replace with actual data from Django)
         let projectData = [
-            { project_name: "Project Alpha", supported_transactions: 120, supported_value: 25000, unsupported_transactions: 5, unsupported_value: 1000 },
-            { project_name: "Project Beta", supported_transactions: 85, supported_value: 18000, unsupported_transactions: 2, unsupported_value: 500 },
-            { project_name: "Project Gamma", supported_transactions: 200, supported_value: 42000, unsupported_transactions: 8, unsupported_value: 1500 },
-            { project_name: "Project Delta", supported_transactions: 95, supported_value: 19000, unsupported_transactions: 1, unsupported_value: 200 },
-            { project_name: "Project Echo", supported_transactions: 150, supported_value: 30000, unsupported_transactions: 6, unsupported_value: 1100 },
-            { project_name: "Project Fox", supported_transactions: 70, supported_value: 15000, unsupported_transactions: 0, unsupported_value: 0 },
-            { project_name: "Project Golf", supported_transactions: 110, supported_value: 22000, unsupported_transactions: 3, unsupported_value: 600 },
-            { project_name: "Project Hotel", supported_transactions: 180, supported_value: 38000, unsupported_transactions: 7, unsupported_value: 1300 },
-            { project_name: "Project India", supported_transactions: 60, supported_value: 12000, unsupported_transactions: 2, unsupported_value: 400 },
-            { project_name: "Project Juliet", supported_transactions: 130, supported_value: 27000, unsupported_transactions: 4, unsupported_value: 800 },
+            { project_name: "Alternative to Charcoal(A2C)", supported_transactions: 120, supported_value: 25000, unsupported_transactions: 5, unsupported_value: 1000 },
+            { project_name: "Smallholders Farmers Support Project", supported_transactions: 85, supported_value: 18000, unsupported_transactions: 2, unsupported_value: 500 },
+            { project_name: "Defence Force HIV Prevention Program", supported_transactions: 200, supported_value: 42000, unsupported_transactions: 8, unsupported_value: 1500 },
+            { project_name: "SARAI:Sexual and Reproductive Health for All Initiative", supported_transactions: 95, supported_value: 19000, unsupported_transactions: 1, unsupported_value: 200 },
+            { project_name: "Mumena Child Aid Project", supported_transactions: 150, supported_value: 30000, unsupported_transactions: 6, unsupported_value: 1100 },
+            { project_name: "Child Aid Western Province", supported_transactions: 70, supported_value: 15000, unsupported_transactions: 0, unsupported_value: 0 },
+            { project_name: "Zambia Family South-Central(ZAMFAM SC)", supported_transactions: 110, supported_value: 22000, unsupported_transactions: 3, unsupported_value: 600 },
+            { project_name: "DAPP Mkushi College of Education", supported_transactions: 180, supported_value: 38000, unsupported_transactions: 7, unsupported_value: 1300 },
+            { project_name: "Second Hand Clothes and Shoes Fundraising Project", supported_transactions: 60, supported_value: 12000, unsupported_transactions: 2, unsupported_value: 400 },
+            { project_name: "COVID-19 Home Based Care", supported_transactions: 130, supported_value: 27000, unsupported_transactions: 4, unsupported_value: 800 },
         ];
+
+        // Populate the dropdown with project names
+        function populateProjectDropdown() {
+            projectData.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.project_name;
+                option.textContent = project.project_name;
+                projectSelect.appendChild(option);
+            });
+        }
 
         function displayProjectData(data) {
             projectTable.innerHTML = ''; // Clear the table
@@ -132,7 +144,7 @@
         function filterProjects(event) {
             event.preventDefault();
 
-            const projectName = document.getElementById('project-name').value.toLowerCase();
+            const projectName = document.getElementById('project-name').value;
             const supportedTransactions = parseInt(document.getElementById('supported-transactions').value) || null;
             const supportedValue = parseInt(document.getElementById('supported-value').value) || null;
             const unsupportedTransactions = parseInt(document.getElementById('unsupported-transactions').value) || null;
@@ -140,7 +152,7 @@
 
             const filteredData = projectData.filter(project => {
                 return (
-                    (!projectName || project.project_name.toLowerCase().includes(projectName)) &&
+                    (!projectName || project.project_name === projectName) &&
                     (supportedTransactions === null || project.supported_transactions === supportedTransactions) &&
                     (supportedValue === null || project.supported_value === supportedValue) &&
                     (unsupportedTransactions === null || project.unsupported_transactions === unsupportedTransactions) &&
@@ -158,7 +170,8 @@
         filterForm.addEventListener('submit', filterProjects);
         resetButton.addEventListener('click', resetFilters);
 
-        // Initial display of all data
+        // Initialize the page
+        populateProjectDropdown();
         displayProjectData(projectData);
     });
 </script>
