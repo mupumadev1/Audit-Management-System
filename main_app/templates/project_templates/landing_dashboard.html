@@ -3,7 +3,13 @@
 {% load humanize %}
 {% block content %}
 <div class="container mt-5">
-    <h1 class="text-center mb-4">Project Dashboard Overview</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Project Dashboard Overview</h1>
+        <div>
+            <span class="me-3">Logged in as: <strong>{{ request.user.username }}</strong></span>
+            <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Logout</a>
+        </div>
+    </div>
 
     <!-- Summary Cards -->
     <div class="row mb-5 justify-content-center">
@@ -70,6 +76,10 @@
             </div>
         </div>
     </div>
+    <footer class="mt-5 text-center text-muted">
+        <hr>
+        <p>&copy; {{ now|date:"Y" }} Your Company Name. All rights reserved.</p>
+    </footer>
 </div>
 
 <style>
@@ -79,36 +89,27 @@
         border: none;
         border-radius: 10px;
     }
-    
     .card:hover {
         transform: translateY(-5px);
     }
-    
     .card-title {
         font-weight: 600;
         font-size: 1rem;
     }
-    
-    /* Make scrollbar more stylish */
     .overflow-auto::-webkit-scrollbar {
         height: 6px;
     }
-    
     .overflow-auto::-webkit-scrollbar-track {
         background: #f1f1f1;
         border-radius: 10px;
     }
-    
     .overflow-auto::-webkit-scrollbar-thumb {
         background: #888;
         border-radius: 10px;
     }
-    
     .overflow-auto::-webkit-scrollbar-thumb:hover {
         background: #555;
     }
-    
-    /* Responsive adjustments */
     @media (max-width: 768px) {
         .d-flex.flex-nowrap {
             overflow-x: auto;

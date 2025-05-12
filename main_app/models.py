@@ -1,4 +1,18 @@
 from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+class CustomUser(AbstractUser):
+    # Add custom fields if needed
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='customuser_set',  # Avoid conflicts with default User model
+        blank=True
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='customuser_set',  # Avoid conflicts with default User model
+        blank=True
+    )
 
 class Project(models.Model):
     project_name = models.CharField(max_length=255)
