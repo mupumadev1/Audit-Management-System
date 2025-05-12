@@ -1,33 +1,31 @@
-{% extends 'base.html' %} {% load static %}
+{% extends 'base.html' %}
+{% load static %}
 {% include "main_app/sidebar_template.html" %}
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="{% static 'main_app/css/styles.css' %}">
-</head>
-<body>
-    <header>
+<div class="container mt-5">
+    <header class="mb-4">
         <h1>Welcome to the Admin Dashboard</h1>
         <nav>
-            <ul>
-                <li><a href="{% url 'logout' %}">Logout</a></li>
+            <ul class="list-inline">
+                <li class="list-inline-item"><a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Logout</a></li>
             </ul>
         </nav>
     </header>
     <main>
-        <section>
+        <section class="mb-4">
             <h2>Admin Controls</h2>
-            <p>Here you can manage users, view reports, and configure settings.</p>
-            <!-- Add more admin functionalities here -->
+            <p>Here you can manage users, add projects, view reports, and configure settings.</p>
+            <div class="d-flex flex-wrap gap-3">
+                <a href="{% url 'admin:main_app_project_add' %}" class="btn btn-primary">Add New Project</a>
+                <a href="{% url 'admin:main_app_customuser_add' %}" class="btn btn-secondary">Add New User</a>
+                <a href="{% url 'admin:index' %}" class="btn btn-outline-primary">Go to Full Admin Panel</a>
+            </div>
         </section>
+        <!-- You can add more admin functionalities here, such as recent activity, stats, etc. -->
     </main>
-    <footer>
-        <p>&copy; {{ current_year }} Your Company Name. All rights reserved.</p>
+    <footer class="mt-5 text-center text-muted">
+        <hr>
+        <p>&copy; {{ now|date:"Y" }} Your Company Name. All rights reserved.</p>
     </footer>
-</body>
-</html>
+</div>
 {% endblock %}
