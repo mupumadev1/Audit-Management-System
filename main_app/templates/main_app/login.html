@@ -3,7 +3,11 @@
 {% block content %}
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
     <div class="card p-4 shadow" style="max-width: 400px; width: 100%;">
-        <h2 class="mb-4 text-center">Login</h2>
+        <div class="text-center mb-3">
+            <img src="{% static 'main_app/images/logo.png' %}" alt="Logo" style="max-width: 120px; max-height: 120px;">
+        </div>
+        <h2 class="mb-4 text-center">DAPP Audit Management Portal</h2>
+        <h4 class="mb-3 text-center">Login</h4>
         <form method="POST" action="{% url 'login' %}">
             {% csrf_token %}
             <div class="mb-3">
