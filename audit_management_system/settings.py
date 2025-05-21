@@ -9,12 +9,11 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -27,9 +26,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
-
+TIME_ZONE = 'Africa/Lusaka'
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -39,6 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'main_app',
+    'transactions',
+    'reports',
 ]
 
 MIDDLEWARE = [
@@ -70,7 +70,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'audit_management_system.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
@@ -83,10 +82,419 @@ DATABASES = {
         "HOST": "localhost",
         "PORT": "3306",
     },
+    'sql_server': {
+        'ENGINE': 'mssql',
+        'NAME': 'INFDAT',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_esn': {
+        'ENGINE': 'mssql',
+        'NAME': '340ESN',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_drp': {
+        'ENGINE': 'mssql',
+        'NAME': '330DRP',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_sam': {
+        'ENGINE': 'mssql',
+        'NAME': '320SAM',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_gav': {
+        'ENGINE': 'mssql',
+        'NAME': '310GAV',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_chz': {
+        'ENGINE': 'mssql',
+        'NAME': '300CHZ',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_a2c': {
+        'ENGINE': 'mssql',
+        'NAME': '291A2C',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_dod': {
+        'ENGINE': 'mssql',
+        'NAME': '281DOD',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_tbp': {
+        'ENGINE': 'mssql',
+        'NAME': '270TBP',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_tbo': {
+        'ENGINE': 'mssql',
+        'NAME': '260TBO',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_fat': {
+        'ENGINE': 'mssql',
+        'NAME': '250FAT',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_mal': {
+        'ENGINE': 'mssql',
+        'NAME': '240MAL',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_hiv': {
+        'ENGINE': 'mssql',
+        'NAME': '230HIV',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    '010CDC': {
+        'ENGINE': 'mssql',
+        'NAME': '010CDC',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    '011CDC': {
+        'ENGINE': 'mssql',
+        'NAME': '011CDC',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    '020CDC': {
+        'ENGINE': 'mssql',
+        'NAME': '020CDC',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    '025ACF': {
+        'ENGINE': 'mssql',
+        'NAME': '025ACF',
+        'USER': 'sa',
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    '030CLM': {
+        'ENGINE': 'mssql',
+        'NAME': '030CLM',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_031clm': {
+        'ENGINE': 'mssql',
+        'NAME': '031CLM',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_eaa': {
+        'ENGINE': 'mssql',
+        'NAME': '040EAA',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_nhq': {
+        'ENGINE': 'mssql',
+        'NAME': '050NHQ',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_pnd': {
+        'ENGINE': 'mssql',
+        'NAME': '060PND',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_yia': {
+        'ENGINE': 'mssql',
+        'NAME': '070YIA',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_cad': {
+        'ENGINE': 'mssql',
+        'NAME': '090CAD',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_cak': {
+        'ENGINE': 'mssql',
+        'NAME': '100CAK',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_cwf': {
+        'ENGINE': 'mssql',
+        'NAME': '110CWF',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_130cam': {
+        'ENGINE': 'mssql',
+        'NAME': '130CAM',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_140cam': {
+        'ENGINE': 'mssql',
+        'NAME': '140CAM',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_ctm': {
+        'ENGINE': 'mssql',
+        'NAME': '150CTM',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_mce': {
+        'ENGINE': 'mssql',
+        'NAME': '160MCE',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_soh': {
+        'ENGINE': 'mssql',
+        'NAME': '170SOH',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_hrc': {
+        'ENGINE': 'mssql',
+        'NAME': '180HRC',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_kmh': {
+        'ENGINE': 'mssql',
+        'NAME': '190KMH',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_yfc': {
+        'ENGINE': 'mssql',
+        'NAME': '200YFC',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_fcn': {
+        'ENGINE': 'mssql',
+        'NAME': '210FCN',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
+    'sql_server_fcs': {
+        'ENGINE': 'mssql',
+        'NAME': '220FCS',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    },
 }
 
 AUTH_USER_MODEL = 'main_app.CustomUser'
+STATIC_URL = "/static/"
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+CELERY_BEAT_SCHEDULE = {
+    'sync-transactions': {
+        'task': 'main_app.tasks.schedule_sync_transactions',
+        'schedule': 300.0,  # Run every 5 minutes
+        # 'schedule': crontab(minute=0, hour='*/2'),  # Every 2 hours
+    },
+}
 
+SYNC_ALERT_EMAILS = ['mupumamgtsdev@gmail.com']
+
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -105,7 +513,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -117,11 +524,9 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
 
 LOGIN_URL = '/login/'
 

@@ -1,0 +1,22 @@
+<div class="modal fade" id="uploadFileModal{{ transaction.batchnbr }}" tabindex="-1" aria-labelledby="uploadFileModalLabel{{ transaction.batchnbr }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="post" enctype="multipart/form-data" action="{% url 'transactions:upload_file' transaction.batchnbr project_name %}" data-project-name="{{ project_name }}" id="upload-form-{{ transaction.batchnbr }}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="uploadFileModalLabel{{ transaction.batchnbr }}">Attach a File</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+          <label for="document-{{ transaction.batchnbr }}">Upload file:</label>
+          <input type="file" name="file" id="document-{{ transaction.batchnbr }}" required>
+          <div id="upload-status-{{ transaction.batchnbr }}"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" id="document-upload-button-{{ transaction.batchnbr }}" class="btn btn-primary">Upload</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

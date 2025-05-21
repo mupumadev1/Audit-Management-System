@@ -1,0 +1,164 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>{% block title %}Document Management System{% endblock %}</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Google Font Quicksand-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300..700&family=Sniglet:wght@400;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Ionicons -->
+    <link
+      rel="stylesheet"
+      href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css"
+    />
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link
+      rel="stylesheet"
+      href="{% static 'plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css' %}"
+    />
+    <!-- iCheck -->
+    <link
+      rel="stylesheet"
+      href="{% static 'plugins/icheck-bootstrap/icheck-bootstrap.min.css' %}"
+    />
+
+    <!-- JQVMap -->
+    <link
+      rel="stylesheet"
+      href="{% static 'plugins/jqvmap/jqvmap.min.css' %}"
+    />
+    <!-- Theme style -->
+    <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}" />
+    <!-- overlayScrollbars -->
+    <link
+      rel="stylesheet"
+      href="{% static 'plugins/overlayScrollbars/css/OverlayScrollbars.min.css' %}"
+    />
+    <!-- Daterange picker -->
+    <link
+      rel="stylesheet"
+      href="{% static 'plugins/daterangepicker/daterangepicker.css' %}"
+    />
+    <!-- summernote -->
+    <link
+      rel="stylesheet"
+      href="{% static 'plugins/summernote/summernote-bs4.css' %}"
+    />
+    <!-- Google Font: Source Sans Pro -->
+    <link
+      href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700"
+      rel="stylesheet"
+    />
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+    />
+    {% block custom_css %}
+    <style>
+      /* Global Styles */
+      * {
+        font-family: "Inter", sans-serif;
+      }
+
+      /* Show the bell badge only when sidebar is collapsed */
+      @media (min-width: 992px) {
+        body:not(.sidebar-collapse) .sidebar-collapsed-only {
+          display: none !important;
+        }
+      }
+
+      .nav-treeview .nav-link p {
+        font-size: 1.0em;
+      }
+
+
+      /* default: chevron-down (points down) */
+      .nav-item.has-treeview > a .right {
+        transform: rotate(0deg);
+        transition: transform .2s;
+      }
+
+      /* rotate the Bootstrap chevron to point up when its parent <li> has menu-open */
+      .nav-item.has-treeview.menu-open > a > .bi-chevron-down {
+        transform: rotate(180deg) !important;
+        transition: transform .2s;
+      }
+    </style>
+    {% endblock custom_css %}
+  </head>
+
+  <body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+      <div class="content-wrapper" style="margin-left: 0px">
+        <!-- Content Header -->
+        <div class="content-header">
+          <div class="container-fluid">
+            <div class="row mb-2">
+              <div class="col-sm-6">
+                <h1 class="m-0 text-dark">
+                  {% block page_title %}{% endblock page_title %}
+                </h1>
+              </div>
+              <div class="col-sm-6">
+
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Main content -->
+        <section class="content">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-md-12">
+                <div class="form-group">
+                  {% if messages %} {% for message in messages %}
+                  {% if message.tags == 'success' %}
+                  <div class="alert alert-success">{{ message }}</div>
+                  {% else %}
+                  <div class="alert alert-danger">{{ message }}</div>
+                  {% endif %} {% endfor %} {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        {% block content %}{% endblock content %}
+      </div>
+      {% include "transactions/footer.html" %}
+    </div>
+    <!-- Scripts -->
+    <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'plugins/jquery-ui/jquery-ui.min.js' %}"></script>
+    <script>
+      $.widget.bridge("uibutton", $.ui.button);
+    </script>
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'plugins/chart.js/Chart.min.js' %}"></script>
+    <script src="{% static 'plugins/sparklines/sparkline.js' %}"></script>
+    <script src="{% static 'plugins/jqvmap/jquery.vmap.min.js' %}"></script>
+    <script src="{% static 'plugins/jqvmap/maps/jquery.vmap.usa.js' %}"></script>
+    <script src="{% static 'plugins/jquery-knob/jquery.knob.min.js' %}"></script>
+    <script src="{% static 'plugins/moment/moment.min.js' %}"></script>
+    <script src="{% static 'plugins/daterangepicker/daterangepicker.js' %}"></script>
+    <script src="{% static 'plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js' %}"></script>
+    <script src="{% static 'plugins/summernote/summernote-bs4.min.js' %}"></script>
+    <script src="{% static 'plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js' %}"></script>
+    <script src="{% static 'dist/js/adminlte.js' %}"></script>
+    <script src="{% static 'dist/js/pages/dashboard.js' %}"></script>
+    <script src="{% static 'dist/js/demo.js' %}"></script>
+    <script src={% static "transactions-js/main.js" %} ></script>
+
+
+  </body>
+</html>

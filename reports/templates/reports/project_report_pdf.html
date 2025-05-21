@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{{ project.project_name }} Report</title>
+    <style>
+        @page {
+            size: letter portrait;
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #333;
+        }
+        .report-container {
+            width: 100%;
+        }
+        .report-header {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 15px;
+        }
+        .report-header h1 {
+            font-size: 24px;
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+        }
+        .report-meta {
+            font-style: italic;
+            color: #666;
+        }
+        .report-section {
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+        }
+        .report-section h2 {
+            font-size: 18px;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .summary-item {
+            margin-bottom: 10px;
+        }
+        .full-width {
+            grid-column: span 2;
+        }
+        .label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .status-completed {
+            color: green;
+        }
+        .status-pending, .status-in_progress {
+            color: orange;
+        }
+        .status-error {
+            color: red;
+        }
+        .analysis-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .stat-subvalue {
+            color: #666;
+        }
+        .stat-percentage {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .supported {
+            border-color: #4CAF50;
+        }
+        .supported .stat-percentage {
+            color: #4CAF50;
+        }
+        .unsupported {
+            border-color: #F44336;
+        }
+        .unsupported .stat-percentage {
+            color: #F44336;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .report-table th, .report-table td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .report-table th {
+            background-color: #f5f5f5;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        .status-badge.supported {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status-badge.unsupported {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+        .comments-section {
+            margin-bottom: 25px;
+        }
+        .comments-section h3 {
+            font-size: 14px;
+            margin: 15px 0 10px 0;
+        }
+        .comment-item {
+            margin-bottom: 15px;
+            border-left: 3px solid #ddd;
+            padding-left: 10px;
+        }
+        .comment-meta {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .comment-author {
+            font-weight: bold;
+        }
+        .comment-date {
+            margin-left: 10px;
+        }
+        .empty-section, .empty-table, .empty-comments {
+            color: #999;
+            font-style: italic;
+        }
+        /* Placeholder for chart image */
+        .chart-image {
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+{% load report_filters %}
+    <div class="report-container">
+        <div class="report-header">
+            <h1>Project Report: {{ project.project_name }}</h1>
+            <p class="report-meta">Generated on: {{ report_date|date:"F j, Y, g:i a" }}</p>
+        </div>
+
+        <div class="report-section">
+            <h2>Project Summary</h2>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="label">Project Name:</span>
+                    <span class="value">{{ project.project_name }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Created:</span>
+                    <span class="value">{{ project.created_at|date:"F j, Y" }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Last Updated:</span>
+                    <span class="value">{{ project.updated_at|date:"F j, Y" }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Last Synced:</span>
+                    <span class="value">{{ project.last_synced|date:"F j, Y, g:i a"|default:"Never" }}</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Sync Status:</span>
+                    <span class="value status-{{ project.sync_status }}">{{ project.sync_status|title }}</span>
+                </div>
+                <div class="summary-item full-width">
+                    <span class="label">Description:</span>
+                    <span class="value">{{ project.description }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="report-section">
+            <h2>Supporting Documents</h2>
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Document</th>
+                        <th>Batch ID</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr>
+                        <td>{{ doc.document.name|slice:"10:" }}</td>
+                        <td>{{ doc.batchid }}</td>
+                        <td class="status-cell">
+                            <span class="status-badge {% if doc.supported %}supported{% else %}unsupported{% endif %}">
+                                {% if doc.supported %}Supported{% else %}Unsupported{% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="empty-table">No supporting documents found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="report-section">
+            <h2>Comments History</h2>
+            {% for batch_id, comments in comments_by_batch.items %}
+            <div class="comments-section">
+                <h3>Batch ID: {{ batch_id }}</h3>
+                <div class="comments-timeline">
+                    {% for comment in comments %}
+                    <div class="comment-item">
+                        <div class="comment-meta">
+                            <span class="comment-author">{{ comment.user.get_full_name|default:comment.user.username }}</span>
+                            <span class="comment-date">{{ comment.timestamp|date:"F j, Y, g:i a" }}</span>
+                        </div>
+                        <div class="comment-text">{{ comment.text }}</div>
+                    </div>
+                    {% empty %}
+                    <p class="empty-comments">No comments for this batch</p>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <p class="empty-section">No comments found for this project</p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,166 @@
+{% extends "reports/base.html" %}
+{% load static %}
+{% load report_filters %}
+{% block title %}{{ project.project_name }} Report{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'reports/css/report.css' %}">
+
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <div class="report-header">
+        <h1>Project Report: {{ project.project_name }}</h1>
+        <p class="report-meta">Generated on: {{ report_date|date:"F j, Y, g:i a" }}</p>
+        <div class="report-actions">
+            <a href="{% url 'reports:project_report_pdf' project.project_id %}" class="button-primary">Download PDF</a>
+        </div>
+    </div>
+    
+    <div class="report-section">
+        <h2>Project Summary</h2>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span class="label">Project Name:</span>
+                <span class="value">{{ project.project_name }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Created:</span>
+                <span class="value">{{ project.created_at|date:"F j, Y" }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Last Updated:</span>
+                <span class="value">{{ project.updated_at|date:"F j, Y" }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Last Synced:</span>
+                <span class="value">{{ project.last_synced|date:"F j, Y, g:i a"|default:"Never" }}</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Sync Status:</span>
+                <span class="value status-{{ project.sync_status }}">{{ project.sync_status|title }}</span>
+            </div>
+            <div class="summary-item full-width">
+                <span class="label">Description:</span>
+                <span class="value">{{ project.description }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="report-section">
+        <h2>Transaction Analysis</h2>
+        <div class="analysis-container">
+            <div class="analysis-chart">
+                <canvas id="transactionChart" width="400" height="400"></canvas>
+            </div>
+            <div class="analysis-stats">
+                <div class="stat-item">
+                    <h3>Total Transactions</h3>
+                    <div class="stat-value">{{ project.get_total_transactions }}</div>
+                    <div class="stat-subvalue">ZMW{{ project.get_total_value|floatformat:2 }}</div>
+                </div>
+                <div class="stat-item supported">
+                    <h3>Supported</h3>
+                    <div class="stat-value">{{ project.supported_transactions_number }}</div>
+                    <div class="stat-subvalue">ZMW{{ project.supported_transactions_value|floatformat:2 }}</div>
+                    <div class="stat-percentage">{{ support_percentage|floatformat:1 }}%</div>
+                </div>
+                <div class="stat-item unsupported">
+                    <h3>Unsupported</h3>
+                    <div class="stat-value">{{ project.unsupported_transactions_number }}</div>
+                    <div class="stat-subvalue">ZMW{{ project.unsupported_transactions_value|floatformat:2 }}</div>
+                    <div class="stat-percentage">{{ 100|sub:support_percentage|floatformat:1 }}%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="report-section">
+        <h2>Supporting Documents</h2>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th>Document</th>
+                    <th>Batch ID</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for doc in documents %}
+                <tr>
+                    <td>{{ doc.document.name|slice:"10:" }}</td>
+                    <td>{{ doc.batchid }}</td>
+                    <td class="status-cell">
+                        <span class="status-badge {% if doc.supported %}supported{% else %}unsupported{% endif %}">
+                            {% if doc.supported %}Supported{% else %}Unsupported{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ doc.document.url }}" target="_blank" class="button-secondary">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="empty-table">No supporting documents found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="report-section">
+        <h2>Comments History</h2>
+        {% for batch_id, comments in comments_by_batch.items %}
+        <div class="comments-section">
+            <h3>Batch ID: {{ batch_id }}</h3>
+            <div class="comments-timeline">
+                {% for comment in comments %}
+                <div class="comment-item">
+                    <div class="comment-meta">
+                        <span class="comment-author">{{ comment.user.get_full_name|default:comment.user.username }}</span>
+                        <span class="comment-date">{{ comment.timestamp|date:"F j, Y, g:i a" }}</span>
+                    </div>
+                    <div class="comment-text">{{ comment.text }}</div>
+                </div>
+                {% empty %}
+                <p class="empty-comments">No comments for this batch</p>
+                {% endfor %}
+            </div>
+        </div>
+        {% empty %}
+        <p class="empty-section">No comments found for this project</p>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var ctx = document.getElementById('transactionChart').getContext('2d');
+        var transactionChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ chart_data.labels|safe }},
+                datasets: [{
+                    data: {{ chart_data.data|safe }},
+                    backgroundColor: [
+                        '#4CAF50',
+                        '#F44336'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,24 +1,32 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
-<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card p-4 shadow" style="max-width: 400px; width: 100%;">
-        <h2 class="mb-4 text-center">Login</h2>
-        <form method="POST" action="{% url 'login' %}">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="username" class="form-label">Username:</label>
-                <input type="text" id="username" name="username" class="form-control" required autofocus>
-            </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Password:</label>
-                <input type="password" id="password" name="password" class="form-control" required>
-            </div>
-            {% if error %}
-                <div class="alert alert-danger py-2">{{ error }}</div>
-            {% endif %}
-            <button type="submit" class="btn btn-primary w-100">Login</button>
+<div class="container min-vh-100 d-flex justify-content-center align-items-center">
+  <div class="row w-100 justify-content-center">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+      <div class="card p-3 p-md-4 shadow">
+        <div class="text-center mb-3">
+          <img src="{% static 'main_app/images/logo.png' %}" alt="Logo" class="img-fluid" style="max-width: 120px; max-height: 120px;">
+        </div>
+        <h2 class="mb-4 text-center">DAPP Document Management Portal</h2>
+        <h4 class="mb-3 text-center">Login</h4>
+        <form method="POST" action="{% url 'main_app:login' %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="username" class="form-label">Username:</label>
+            <input type="text" id="username" name="username" class="form-control" required autofocus>
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Password:</label>
+            <input type="password" id="password" name="password" class="form-control" required>
+          </div>
+          {% if error %}
+            <div class="alert alert-danger py-2">{{ error }}</div>
+          {% endif %}
+          <button type="submit" class="btn btn-primary w-100">Login</button>
         </form>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

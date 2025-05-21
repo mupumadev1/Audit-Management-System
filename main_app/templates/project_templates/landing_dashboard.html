@@ -1,13 +1,14 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load humanize %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="mb-0">Project Dashboard Overview</h1>
         <div>
             <span class="me-3">Logged in as: <strong>{{ request.user.username }}</strong></span>
-            <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">Logout</a>
+            <a href="{% url 'main_app:logout' %}" class="btn btn-outline-danger btn-sm">Logout</a>
         </div>
     </div>
 
@@ -61,18 +62,20 @@
                     <tbody>
                         {% for project in top_projects %}
                         <tr>
-                            <td>{{ project.project_name }}</td>
-                            <td>{{ project.supported_transactions }}</td>
-                            <td>{{ project.supported_value|intcomma }}</td>
-                            <td>{{ project.unsupported_transactions }}</td>
-                            <td>{{ project.unsupported_value|intcomma }}</td>
+                            <td> <a href="{% url 'transactions:project_dashboard' project.project_name %}" class="btn btn-link text-decoration-none">
+    {{ project.project_name }}
+  </a></td>
+                            <td>{{ project.supported_transactions_number }}</td>
+                            <td>{{ project.supported_transactions_value|intcomma }}</td>
+                            <td>{{ project.unsupported_transactions_number }}</td>
+                            <td>{{ project.unsupported_transactions_value|intcomma }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
             <div class="text-end">
-                <a href="{% url 'view_project_dashboard' %}" class="btn btn-outline-primary mt-3">View Full Dashboard</a>
+                <a href="{% url 'main_app:view_project_dashboard' %}" class="btn btn-outline-primary mt-3">View Full Dashboard</a>
             </div>
         </div>
     </div>
