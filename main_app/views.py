@@ -47,7 +47,7 @@ def login_view(request):
 # Logout view
 def logout_view(request):
     logout(request)
-    return redirect('login')
+    return redirect('main_app:login')
 
 
 # Admin dashboard view
@@ -74,7 +74,6 @@ def staff_dashboard(request):
 
 @login_required
 def landing_dashboard(request):
-    sync_all_projects()
     """
     View function for the landing dashboard, showing project transaction statistics
     """
@@ -135,7 +134,8 @@ def _get_aggregated_data(sql_server_db: str, project_name: str) -> Dict:
     # Create a mapping of batchid to supported status
     batchid_support_map = {doc['batchid']: doc['supported'] for doc in supporting_docs}
     supported_batchnbrs = [batchid for batchid, supported in batchid_support_map.items() if supported]
-    unsupported_batchnbrs = [batchid for batchid, supported in batchid_support_map.items() if not supported]
+    # Note: unsupported transactions are determined by NOT being in the supported list
+    print("Supported batch numbers:", supported_batchnbrs)
 
     # Verify the mapping exists for this project and database
     try:
@@ -158,7 +158,7 @@ def _get_aggregated_data(sql_server_db: str, project_name: str) -> Dict:
     company_id = database.sql_server_db
 
     # Build the SQL query
-    if supported_batchnbrs or unsupported_batchnbrs:
+    if supporting_docs.exists():  # Only proceed if there are supporting documents
         # For double-entry accounting, we need to handle the positive and negative entries
         # We'll count distinct batch/entry combinations and sum the absolute values of transactions
 
@@ -184,10 +184,10 @@ def _get_aggregated_data(sql_server_db: str, project_name: str) -> Dict:
             supported_params = []
             supported_value_params = []
 
-        # Build conditions for unsupported transactions
-        if unsupported_batchnbrs:
-            unsupported_placeholders = ','.join(['%s'] * len(unsupported_batchnbrs))
-            unsupported_condition = f"batchnbr IN ({unsupported_placeholders})"
+        # Build conditions for unsupported transactions (any batch NOT in supported list)
+        if supported_batchnbrs:
+            unsupported_placeholders = ','.join(['%s'] * len(supported_batchnbrs))
+            unsupported_condition = f"batchnbr NOT IN ({unsupported_placeholders})"
             unsupported_count_query = f"""
                 SELECT COUNT(DISTINCT batchnbr + '-' + entrynbr) 
                 FROM glpost 
@@ -198,13 +198,22 @@ def _get_aggregated_data(sql_server_db: str, project_name: str) -> Dict:
                 FROM glpost 
                 WHERE {unsupported_condition} AND companyid = %s AND transamt > 0
             """
-            unsupported_params = unsupported_batchnbrs + [company_id]
-            unsupported_value_params = unsupported_batchnbrs + [company_id]
+            unsupported_params = supported_batchnbrs + [company_id]
+            unsupported_value_params = supported_batchnbrs + [company_id]
         else:
-            unsupported_count_query = "SELECT 0"
-            unsupported_value_query = "SELECT 0"
-            unsupported_params = []
-            unsupported_value_params = []
+            # If no supported batches, all batches are unsupported
+            unsupported_count_query = """
+                SELECT COUNT(DISTINCT batchnbr + '-' + entrynbr) 
+                FROM glpost 
+                WHERE companyid = %s AND transamt > 0
+            """
+            unsupported_value_query = """
+                SELECT SUM(ABS(transamt)) 
+                FROM glpost 
+                WHERE companyid = %s AND transamt > 0
+            """
+            unsupported_params = [company_id]
+            unsupported_value_params = [company_id]
 
         # Connect to the specific SQL Server database
         connection = connections[sql_server_db]

@@ -7,6 +7,7 @@
 
     <!-- Base CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+
     <style>
         :root {
             --primary-color: #3498db;
@@ -42,7 +43,7 @@
         header {
             background-color: var(--secondary-color);
             color: white;
-            padding: 10px 0;
+            padding: 5px 0;
         }
 
         header .container {
@@ -139,10 +140,9 @@
             <h1 class="site-title"><a href="/reports/static">Document Management System</a></h1>
             <nav>
                 <ul>
-                    <li><a href="/reports/static">Home</a></li>
-                    <li><a href="/projects/">Projects</a></li>
-                    <li><a href="/reports">Reports</a></li>
-                    <li><a href="/account/">Account</a></li>
+                    <li><a href="{% url 'main_app:landing_dashboard' %}">Home</a></li>
+                    <li><a href="{% url 'main_app:view_project_dashboard' %}">Projects</a></li>
+                    <li><a href="{% url 'main_app:logout' %}">Log out</a></li>
                 </ul>
             </nav>
         </div>
