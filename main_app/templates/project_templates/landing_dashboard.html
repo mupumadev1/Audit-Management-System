@@ -1,0 +1,554 @@
+{% extends 'reports/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_css %}
+<style>
+    /* Existing styles from your template */
+    .skeleton {
+        background-color: #e2e2e2;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .skeleton::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -150px;
+        height: 100%;
+        width: 150px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        animation: loading-shimmer 1.5s infinite;
+    }
+
+    @keyframes loading-shimmer {
+        0% { left: -150px; }
+        100% { left: 100%; }
+    }
+
+    .skeleton-title {
+        width: 60%;
+        height: 20px;
+        margin-bottom: 15px;
+    }
+
+    .skeleton-text {
+        width: 90%;
+        height: 14px;
+        margin-bottom: 10px;
+    }
+
+    .skeleton-card {
+        background: #f5f5f5;
+        padding: 20px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+    }
+
+    .skeleton-summary-card {
+        width: 150px;
+        height: 80px;
+        margin-bottom: 20px;
+        border-radius: 5px;
+    }
+
+    .skeleton-table-row {
+        width: 100%;
+        height: 40px;
+        margin-bottom: 5px;
+    }
+
+    /* Progress indicator */
+    .progress-container {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 4px;
+        background-color: #e0e0e0;
+        border-radius: 2px;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background-color: #007bff;
+        transition: width 0.3s ease;
+        animation: progress-pulse 2s infinite;
+    }
+
+    @keyframes progress-pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+
+    /* Content visibility */
+    .content-hidden {
+        display: none;
+    }
+
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .error-message {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border: 1px solid #f5c6cb;
+    }
+
+    .retry-btn {
+        background-color: #dc3545;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .retry-btn:hover {
+        background-color: #c82333;
+    }
+
+    /* Your existing styles */
+    .summary-cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .summary-card {
+        flex: 1;
+        min-width: 150px;
+        padding: 20px;
+        border-radius: 5px;
+        color: white;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+    
+    .summary-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .summary-card h3 {
+        margin-top: 0;
+        font-size: 18px;
+    }
+    
+    .summary-card .value {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 10px 0 0;
+    }
+    
+    .bg-primary { background-color: #007bff; }
+    .bg-warning { background-color: #ffc107; }
+    .bg-success { background-color: #28a745; }
+    .bg-info { background-color: #17a2b8; }
+    
+    .filters-section {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border: 1px solid #eee;
+    }
+    
+    .filters-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: end;
+        justify-content: flex-end;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        min-width: 150px;
+    }
+    
+    .filter-group label {
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #6c757d;
+    }
+    
+    .filter-group select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        height: 38px;
+    }
+    
+    .filter-btn {
+        padding: 8px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        background-color: #007bff;
+        color: white;
+        height: 38px;
+    }
+    
+    .filter-btn:hover {
+        background-color: #0056b3;
+    }
+    
+    .table-container {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    table th, table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+    }
+    
+    table th {
+        color: #6c757d;
+        background-color: #f8f9fa;
+    }
+    
+    table tbody tr:hover {
+        background-color: #f9f9f9;
+    }
+    
+    .project-link {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .project-link:hover {
+        text-decoration: underline;
+    }
+
+    .tooltip-container {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: rgba(0, 0, 0, 0.85);
+        color: white;
+        padding: 6px 10px;
+        border-radius: 4px;
+        white-space: nowrap;
+        font-size: 13px;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease;
+        z-index: 10;
+        margin-bottom: 8px;
+    }
+
+    .tooltip-container:hover .tooltip {
+        opacity: 1;
+        visibility: visible;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="user-info">
+        <h1>Projects Overview</h1>
+    </div>
+
+    <!-- Error Message (hidden initially) -->
+    <div id="error-message" class="error-message content-hidden">
+        <h4>Error Loading Data</h4>
+        <p id="error-text">An error occurred while loading the project data.</p>
+        <button id="retry-btn" class="retry-btn">Retry</button>
+    </div>
+
+    <!-- Loading Skeleton -->
+    <div id="skeleton-content">
+        <!-- Skeleton Summary Cards -->
+        <div class="summary-cards">
+            <div class="skeleton skeleton-summary-card"></div>
+            <div class="skeleton skeleton-summary-card"></div>
+            <div class="skeleton skeleton-summary-card"></div>
+            <div class="skeleton skeleton-summary-card"></div>
+            <div class="skeleton skeleton-summary-card"></div>
+            <div class="skeleton skeleton-summary-card"></div>
+            <div class="skeleton skeleton-summary-card"></div>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="progress-container">
+            <p id="progress-text">Loading project data...</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Skeleton Table -->
+        <div class="skeleton-card">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-table-row"></div>
+            <div class="skeleton skeleton-table-row"></div>
+            <div class="skeleton skeleton-table-row"></div>
+            <div class="skeleton skeleton-table-row"></div>
+            <div class="skeleton skeleton-table-row"></div>
+        </div>
+    </div>
+
+    <!-- Real Content (hidden initially) -->
+    <div id="real-content" class="content-hidden">
+        <!-- Summary Cards -->
+        <div class="summary-cards">
+            <div class="summary-card bg-primary">
+                <h3>Total Projects</h3>
+                <p class="value" id="total-projects">0</p>
+            </div>
+            <div class="summary-card bg-primary">
+                <h3>Total Supported Transactions</h3>
+                <p class="value" id="total-supported-transactions">0</p>
+            </div>
+            <div class="summary-card bg-success">
+                <h3>Total Supported Value</h3>
+                <p class="value" id="total-supported-value">K0</p>
+            </div>
+            <div class="summary-card bg-warning tooltip-container">
+                <h3>Total Unsupported Transactions</h3>
+                <p class="value" id="total-unsupported-transactions">0</p>
+                <div class="tooltip">
+                    Total Value: <span id="tooltip-unsupported-value">0</span>
+                </div>
+            </div>
+            <div class="summary-card bg-success">
+                <h3>Completed Projects</h3>
+                <p class="value" id="fully-supported-projects">0</p>
+            </div>
+        </div>
+
+        <!-- Projects Table with Integrated Filters -->
+        <div class="table-container">
+            <h3>Recent Projects</h3>
+            
+            <!-- Filters Section -->
+            <div class="filters-section">
+                <form id="filterForm">
+                    <div class="filters-row">
+                        <div class="filter-group">
+                            <label for="fiscal_year">Fiscal Year</label>
+                            <select name="fiscal_year" id="fiscal_year">
+                                <option value="">All Years</option>
+                                {% for year in available_years %}
+                                    <option value="{{ year }}" {% if year == selected_fiscal_year %}selected{% endif %}>
+                                        {{ year }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="fiscal_period">Fiscal Period</label>
+                            <select name="fiscal_period" id="fiscal_period">
+                                <option value="">All Periods</option>
+                                {% for period in available_periods %}
+                                    <option value="{{ period }}" {% if period == selected_fiscal_period %}selected{% endif %}>
+                                        Period {{ period }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <button type="submit" class="filter-btn">Apply Filters</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Projects Table -->
+            <table>
+                <thead>
+                    <tr>
+                        <th>Project Name</th>
+                        <th>Supported Transactions</th>
+                        <th>Supported Value (K)</th>
+                        <th>Unsupported Transactions</th>
+                        <th>Unsupported Value (K)</th>
+                    </tr>
+                </thead>
+                <tbody id="projects-table-body">
+                    <!-- Content will be populated by JavaScript -->
+                </tbody>
+            </table>
+             <div class="view-all-link">
+                <a href="{% url 'main_app:landing_dashboard' %}" class="btn btn-outline">View Full Dashboard</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let currentRequest = null;
+    
+    // Function to load project data
+    function loadProjectData() {
+        // Cancel any existing request
+        if (currentRequest) {
+            currentRequest.abort();
+        }
+        
+        // Show skeleton, hide error and content
+        $('#skeleton-content').show();
+        $('#error-message').hide();
+        $('#real-content').hide();
+        
+        // Reset progress
+        $('#progress-fill').css('width', '0%');
+        $('#progress-text').text('Loading project data...');
+        
+        // Get filter values
+        const fiscalYear = $('#fiscal_year').val();
+        const fiscalPeriod = $('#fiscal_period').val();
+        const searchQuery = $('#search').val() || '';
+        
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (fiscalYear) params.append('fiscal_year', fiscalYear);
+        if (fiscalPeriod) params.append('fiscal_period', fiscalPeriod);
+        if (searchQuery) params.append('search', searchQuery);
+        
+        // Simulate progress updates
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
+            $('#progress-fill').css('width', progress + '%');
+        }, 500);
+        
+        // Make AJAX request
+        currentRequest = $.ajax({
+            url: '{% url "main_app:projects_data_api" %}?' + params.toString(),
+            method: 'GET',
+            success: function(response) {
+                clearInterval(progressInterval);
+                $('#progress-fill').css('width', '100%');
+                
+                if (response.success) {
+                    populateData(response.data);
+                    
+                    // Hide skeleton, show content
+                    setTimeout(() => {
+                        $('#skeleton-content').hide();
+                        $('#real-content').show().removeClass('content-hidden').addClass('fade-in');
+                    }, 300);
+                } else {
+                    showError(response.error || 'Unknown error occurred');
+                }
+            },
+            error: function(xhr, status, error) {
+                clearInterval(progressInterval);
+                
+                if (status !== 'abort') {
+                    let errorMessage = 'Failed to load project data';
+                    if (status === 'timeout') {
+                        errorMessage = 'Request timed out. The server may be processing a large amount of data.';
+                    } else if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    }
+                    showError(errorMessage);
+                }
+            }
+        });
+    }
+    
+    // Function to populate data in the UI
+    function populateData(data) {
+        // Update summary cards
+        $('#total-projects').text(data.total_projects.toLocaleString());
+        $('#total-supported-transactions').text(data.total_supported_transactions.toLocaleString());
+        $('#total-supported-value').text('K' + data.total_supported_value.toLocaleString());
+        $('#total-unsupported-transactions').text(data.total_unsupported_transactions.toLocaleString());
+        $('#tooltip-unsupported-value').text(data.total_unsupported_value.toLocaleString());
+        $('#fully-supported-projects').text(data.fully_supported_projects.toLocaleString());
+        
+        // Update projects table
+        const tableBody = $('#projects-table-body');
+        tableBody.empty();
+        
+        data.top_projects.forEach(project => {
+            const row = `
+                <tr>
+                    <td><a href="${project.project_url}" class="project-link">${project.project_name}</a></td>
+                    <td>${project.supported_transactions_number.toLocaleString()}</td>
+                    <td>${project.supported_transactions_value.toLocaleString()}</td>
+                    <td>${project.unsupported_transactions_number.toLocaleString()}</td>
+                    <td>${project.unsupported_transactions_value.toLocaleString()}</td>
+                </tr>
+            `;
+            tableBody.append(row);
+        });
+        
+        if (data.top_projects.length === 0) {
+            tableBody.append('<tr><td colspan="5" style="text-align: center; color: #666;">No projects found</td></tr>');
+        }
+    }
+    
+    // Function to show error message
+    function showError(message) {
+        $('#error-text').text(message);
+        $('#skeleton-content').hide();
+        $('#real-content').hide();
+        $('#error-message').removeClass('content-hidden').show();
+    }
+    
+    // Handle form submission
+    $('#filterForm').on('submit', function(e) {
+        e.preventDefault();
+        loadProjectData();
+    });
+    
+    // Handle retry button
+    $('#retry-btn').on('click', function() {
+        loadProjectData();
+    });
+    
+    // Load data when page loads
+    loadProjectData();
+});
+</script>
+{% endblock %}

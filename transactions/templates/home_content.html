@@ -1,0 +1,1011 @@
+{% extends 'transactions/base.html' %}
+
+{% load static %}
+{%  load humanize %}
+{% load custom_filter %}
+
+{% block page_title %}{{project_name}}{% endblock page_title %}
+{% block custom_css %}
+<style>
+  /* Header layout styling */
+ .summary-cards {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .summary-card {
+        flex: 1;
+        min-width: 200px;
+        padding: 20px;
+        border-radius: 5px;
+        color: white;
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .summary-card h3 {
+        margin-top: 0;
+        font-size: 18px;
+    }
+
+    .summary-card .value {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 10px 0 0;
+    }
+
+
+  /* Improved editable comment styling */
+  .editable-comment {
+    cursor: pointer;
+    position: relative;
+    min-width: 150px;
+    padding: 5px 8px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+  }
+
+  .comment-history-btn {
+    margin-left: 5px;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+  }
+
+  .comment-history-btn:hover {
+    opacity: 1;
+  }
+
+  .comment-history-item {
+    padding: 10px;
+    border-bottom: 1px solid #dee2e6;
+  }
+
+  .comment-history-item:last-child {
+    border-bottom: none;
+  }
+
+  .comment-history-meta {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-bottom: 3px;
+  }
+
+  .editable-comment:hover {
+    background-color: #f1f3f5;
+  }
+
+  .editable-comment:hover::after {
+    content: '';
+    font-family: 'bootstrap-icons';
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.5;
+    font-size: 0.8rem;
+  }
+
+  .comment-editor {
+    resize: vertical;
+    min-height: 60px;
+    margin-bottom: 5px;
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+  }
+
+  .comment-editor-container {
+    padding: 5px 0;
+  }
+
+  /* Additional styling improvements */
+  .stat-box-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .table-filter-section {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+  }
+
+  .badge-supported {
+    padding: 5px 8px;
+    font-weight: 500;
+  }
+
+  /* Pagination styling */
+  .pagination {
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+
+  .pagination .page-link {
+    color: #495057;
+    border: 1px solid #dee2e6;
+  }
+
+  .pagination .page-item.active .page-link {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+  }
+
+  .pagination .page-link:hover {
+    color: #495057;
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+  }
+
+  .pagination .page-item.disabled .page-link {
+    color: #6c757d;
+    background-color: #fff;
+    border-color: #dee2e6;
+  }
+   .user-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        margin-top: 40px;
+    }
+
+    .user-info span {
+        margin-right: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="content">
+  <div class="container" style="max-width:1200px">
+  <div class="user-info">
+        <h1 style="font-size: 2em; margin: .67em 0 ">{{ project_name }} Dashboard</h1>
+
+    </div>
+    <!-- Page header with left-aligned title and right-aligned breadcrumbs -->
+
+  <div class="summary-cards">
+        <div class="summary-card bg-primary">
+            <h3>Supported Documents</h3>
+            <p class="value">{{ total_supported_transactions|intcomma  }}</p>
+        </div>
+        <div class="summary-card bg-primary">
+            <h3>Supported Value</h3>
+            <p class="value">ZMW {{ total_supported_value|intcomma  }}</p>
+        </div>
+        <div class="summary-card bg-warning">
+            <h3>Unsupported Transactions</h3>
+            <p class="value">{{ total_unsupported_transactions|intcomma  }}</p>
+        </div>
+        <div class="summary-card bg-success">
+            <h3>Unsupported Value</h3>
+            <p class="value">ZMW {{ total_unsupported_value|intcomma }}</p>
+        </div>
+    </div>
+
+    <!-- Main content card -->
+    <div class="card card-secondary">
+
+      <div class="card-body">
+        <!-- Search and filter section -->
+
+<div class="table-filter-section">
+  <!-- Toggle for Advanced Filters -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <button type="button" class="btn btn-outline-info btn-sm" id="toggle-advanced-filters">
+        <i class="bi bi-funnel"></i> Advanced Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Basic Search (existing functionality) -->
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <div class="input-group">
+        <input type="text" class="form-control" id="table-search" placeholder="Quick search..." value="{{ search_term }}">
+        <div class="input-group-append">
+          <select class="form-control" id="search-column">
+            <option value="all" {% if search_column == 'all' %}selected{% endif %}>All Fields</option>
+            <option value="period" {% if search_column == 'period' %}selected{% endif %}>Period</option>
+            <option value="source" {% if search_column == 'source' %}selected{% endif %}>Source</option>
+            <option value="reference" {% if search_column == 'reference' %}selected{% endif %}>Reference</option>
+            <option value="account" {% if search_column == 'account' %}selected{% endif %}>Account</option>
+            <option value="description" {% if search_column == 'description' %}selected{% endif %}>Description</option>
+            <option value="posting_sequence" {% if search_column == 'posting_sequence' %}selected{% endif %}>Posting Sequence</option>
+            <option value="date" {% if search_column == 'date' %}selected{% endif %}>Date</option>
+          </select>
+        </div>
+        <div class="input-group-append">
+          <button class="btn btn-primary" type="button" id="quick-search-button">
+            <i class="bi bi-search"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <select class="form-control" id="support-filter">
+        <option value="all" {% if support_filter == 'all' %}selected{% endif %}>All Documents</option>
+        <option value="supported" {% if support_filter == 'supported' %}selected{% endif %}>Supported Only</option>
+        <option value="unsupported" {% if support_filter == 'unsupported' %}selected{% endif %}>Unsupported Only</option>
+      </select>
+    </div>
+    <div class="col-md-3 text-right">
+      <button class="btn btn-warning" type="button" id="reset-all-filters">
+        <i class="bi bi-arrow-clockwise"></i> Reset All
+      </button>
+      <a href="{% url 'reports:project_report' project_id %}" class="btn btn-primary">
+        <i class="bi bi-bar-chart"></i> Report
+      </a>
+    </div>
+  </div>
+
+  <!-- Advanced Filters (collapsible) -->
+  <div id="advanced-filters" class="collapse">
+    <form id="advanced-filter-form">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="bi bi-sliders"></i> Advanced Filters</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- Text Filters -->
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="filter_period">Period</label>
+                <input type="text" class="form-control" id="filter_period" name="filter_period" value="{{ filters.period }}">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="filter_source">Source</label>
+                <input type="text" class="form-control" id="filter_source" name="filter_source" value="{{ filters.source }}">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="filter_reference">Reference</label>
+                <input type="text" class="form-control" id="filter_reference" name="filter_reference" value="{{ filters.reference }}">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="filter_account">Account</label>
+                <input type="text" class="form-control" id="filter_account" name="filter_account" value="{{ filters.account }}">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-4">
+              <div class="form-group">
+                <label for="filter_description">Description</label>
+                <input type="text" class="form-control" id="filter_description" name="filter_description" value="{{ filters.description }}">
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label for="filter_posting_sequence">Posting Seq</label>
+                <input type="text" class="form-control" id="filter_posting_sequence" name="filter_posting_sequence" value="{{ filters.posting_sequence }}">
+              </div>
+            </div>
+            <!-- Date Range Filters -->
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="filter_date_from">Date From</label>
+                <input type="date" class="form-control" id="filter_date_from" name="filter_date_from" value="{{ filters.date_from }}">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="filter_date_to">Date To</label>
+                <input type="date" class="form-control" id="filter_date_to" name="filter_date_to" value="{{ filters.date_to }}">
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <!-- Amount Range Filters -->
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="filter_amount_from">Min Amount</label>
+                <input type="number" step="0.01" class="form-control" id="filter_amount_from" name="filter_amount_from" value="{{ filters.amount_from }}">
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="filter_amount_to">Max Amount</label>
+                <input type="number" step="0.01" class="form-control" id="filter_amount_to" name="filter_amount_to" value="{{ filters.amount_to }}">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>&nbsp;</label>
+                <div class="d-flex">
+                  <button type="button" class="btn btn-success mr-2" id="apply-advanced-filters">
+                    <i class="bi bi-check2"></i> Apply Filters
+                  </button>
+                  <button type="button" class="btn btn-secondary" id="clear-advanced-filters">
+                    <i class="bi bi-x"></i> Clear
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+        <!-- Table Section -->
+        <div class="table-responsive">
+          <table id="transactions-table" class="table table-bordered table-striped">
+            <thead>
+              <tr>
+                <th>Period</th>
+                <th>Source</th>
+                <th>Date</th>
+                <th>Reference</th>
+                <th>Account</th>
+                <th>Description</th>
+                <th>Posting Sequence</th>
+                <th>Batch Entry</th>
+                <th>Transaction Amount</th>
+                <th>Supported</th>
+                <th>Comment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for transaction in transactions %}
+              <tr data-id="{{ transaction.batchnbr }}-{{ transaction.entrynbr }}">
+                <td>{{ transaction.fiscalperd }}</td>
+                <td>{{ transaction.drilapp }}</td>
+                <td>{{ transaction.jrnldate }}</td>
+                <td>{{ transaction.jnldtlref }}</td>
+                <td>{{ transaction.acctid }}</td>
+                <td>{{ transaction.jnldtldesc }}</td>
+                <td>{{ transaction.postingseq }}</td>
+                <td>{{ transaction.batchnbr }}-{{ transaction.entrynbr }}</td>
+                <td class="text-right">{{ transaction.transamt|floatformat:2|intcomma  }}</td>
+              <td class="text-center">
+                    {% with batch_entry_key=transaction.batchnbr|add:"-"|add:transaction.entrynbr %}
+                        {% if batch_entry_key in supported_batch_entries %}
+                            <span class="badge badge-success badge-supported" data-bs-toggle="modal" data-bs-target="#viewFileModal{{ transaction.batchnbr }}-{{ transaction.entrynbr }}">
+                                <i class="bi bi-check"></i> Yes
+                            </span>
+                        {% else %}
+                            <span class="badge badge-danger badge-supported" data-bs-toggle="modal" data-bs-target="#uploadFileModal{{ transaction.batchnbr }}-{{ transaction.entrynbr }}">
+                                <i class="bi bi-x"></i> No
+                            </span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+            <td class="editable-comment d-flex justify-content-center align-items-center"
+                title="Click to edit comment"
+                data-jnldtlref="{{ transaction.batchnbr }}-{{ transaction.entrynbr }}">
+                  {% comment %}Check if there's a comment for this transaction{% endcomment %}
+                  {% with batch_entry_key=transaction.batchnbr|add:"-"|add:transaction.entrynbr %}
+                  {% if batch_entry_key in comments_dict %}
+                    <a href="#" class="comment-history-btn ml-1" data-id="{{ transaction.batchnbr }}-{{ transaction.entrynbr }}" title="View comment history">
+                      <i class="bi bi-clock-history text-info"></i>
+                    </a>
+                  {% else %}
+                    <span class="empty-comment">Add a comment...</span>
+                  {% endif %}
+                  {% endwith %}
+                </td>
+              </tr>
+                   {% include 'modals/comment-history.html' %}
+                {% include 'modals/view.html' %}
+                {% include 'modals/upload.html' %}
+              {% empty %}
+              <tr>
+                <td colspan="12" class="text-center">No transactions found.</td>
+              </tr>
+
+
+              {% endfor %}
+            </tbody>
+
+          </table>
+        </div>
+
+        <!-- Pagination Section -->
+    {% if page_obj.has_other_pages %}
+<nav aria-label="Transactions pagination">
+  <ul class="pagination justify-content-center">
+    <!-- Previous Page Link -->
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page=1{% if search_term %}&search={{ search_term|urlencode }}&search_column={{ search_column|urlencode }}{% endif %}{% if support_filter and support_filter != 'all' %}&support_filter={{ support_filter|urlencode }}{% endif %}" aria-label="First">
+          <span aria-hidden="true"><i class="bi bi-chevron-double-left"></i></span>
+        </a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_term %}&search={{ search_term|urlencode }}&search_column={{ search_column|urlencode }}{% endif %}{% if support_filter and support_filter != 'all' %}&support_filter={{ support_filter|urlencode }}{% endif %}" aria-label="Previous">
+          <span aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <span aria-hidden="true"><i class="bi bi-chevron-double-left"></i></span>
+        </span>
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link">
+          <span aria-hidden="true"><i class="bi bi-chevron-left"></i></span>
+        </span>
+      </li>
+    {% endif %}
+
+    <!-- Page Numbers -->
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <li class="page-item active">
+          <span class="page-link">{{ num }}</span>
+        </li>
+      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ num }}{% if search_term %}&search={{ search_term|urlencode }}&search_column={{ search_column|urlencode }}{% endif %}{% if support_filter and support_filter != 'all' %}&support_filter={{ support_filter|urlencode }}{% endif %}">{{ num }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+
+    <!-- Next Page Link -->
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_term %}&search={{ search_term|urlencode }}&search_column={{ search_column|urlencode }}{% endif %}{% if support_filter and support_filter != 'all' %}&support_filter={{ support_filter|urlencode }}{% endif %}" aria-label="Next">
+          <span aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+        </a>
+      </li>
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_term %}&search={{ search_term|urlencode }}&search_column={{ search_column|urlencode }}{% endif %}{% if support_filter and support_filter != 'all' %}&support_filter={{ support_filter|urlencode }}{% endif %}" aria-label="Last">
+          <span aria-hidden="true"><i class="bi bi-chevron-double-right"></i></span>
+        </a>
+      </li>
+    {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">
+          <span aria-hidden="true"><i class="bi bi-chevron-right"></i></span>
+        </span>
+      </li>
+      <li class="page-item disabled">
+        <span class="page-link">
+          <span aria-hidden="true"><i class="bi bi-chevron-double-right"></i></span>
+        </span>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+
+<!-- Pagination Info -->
+<div class="row">
+  <div class="col-md-12 text-center">
+    <small class="text-muted">
+      Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} transactions
+      {% if search_term %}
+        (filtered by "{{ search_term }}")
+      {% endif %}
+      {% if support_filter and support_filter != 'all' %}
+        (showing {{ support_filter }} only)
+      {% endif %}
+    </small>
+  </div>
+</div>
+{% endif %}
+      </div>
+      <!-- /.card-body -->
+    </div>
+  </div>
+  <!-- /.container-fluid -->
+</section>
+
+{% endblock content %}
+
+{% block custom_js %}
+<script>
+    $(document).ready(function() {
+    // Initialize comment editing functionality
+    initCommentEditing();
+
+    // Initialize comment history functionality
+    initCommentHistory();
+
+    // Calculate totals for debit and credit columns
+   // calculateColumnTotals();
+
+    // Initialize search and filter functionality
+    initSearch();
+
+    /**
+     * Initialize the comment history functionality
+     */
+
+
+
+    function initCommentHistory() {
+      // Handle clicks on the history button
+      $('#transactions-table').on('click', '.comment-history-btn', function(e) {
+        e.preventDefault();
+        e.stopPropagation(); // Prevent triggering the edit function
+
+        const btn = $(this);
+        const transactionId = btn.data('id');
+        console.log(transactionId)
+        const transactionRef = btn.closest('tr').find('td:eq(3)').text(); // Reference column
+
+        // Update modal title
+        $('#history-transaction-ref').text(transactionRef);
+
+        // Show the modal
+        $('#commentHistoryModal').modal('show');
+
+        // Load comment history
+        loadCommentHistory(transactionId);
+      });
+    }
+
+    /**
+     * Load comment history via AJAX
+     */
+function loadCommentHistory(transactionId) {
+  // Reset container
+  $('#comment-history-container').html('<div class="text-center"><i class="bi bi-arrow-repeat spin-icon"></i> Loading history...</div>');
+
+  // Load history via AJAX
+  $.ajax({
+    url: '{% url "transactions:get_transaction_comment_history" %}',
+    type: 'GET',
+    data: {
+      'transaction_id': transactionId
+    },
+    dataType: 'json',
+    success: function(response) {
+      if (response.success) {
+        let historyHtml = '';
+
+        if (response.history.length > 0) {
+          response.history.forEach(function(item) {
+            // Store the actual comment text as a data attribute to avoid HTML parsing issues
+            historyHtml += `
+              <div class="comment-history-item" data-comment-id="${item.id}" data-comment-text="${encodeURIComponent(item.text || '')}">
+                <div class="comment-history-meta">
+                  <span class="user"><i class="bi bi-person"></i> ${item.user}</span> •
+                  <span class="date">${item.date}</span>
+                  <span class="ml-auto">
+                    <button class="btn btn-sm btn-outline-danger delete-comment-btn" data-comment-id="${item.id}">Delete</button>
+                  </span>
+                </div>
+                <div class="comment-text" id="comment-text-${item.id}">${item.text || '<em>No comment</em>'}</div>
+              </div>
+            `;
+          });
+        } else {
+          historyHtml = '<div class="alert alert-info">No comment history available for this transaction.</div>';
+        }
+
+        // Add comment form
+        historyHtml += `
+          <div class="add-comment-section mt-3">
+            <textarea id="new-comment-text" class="form-control" rows="3" placeholder="Add a new comment..."></textarea>
+            <button id="add-comment-btn" class="btn btn-success mt-2">Add</button>
+          </div>
+        `;
+
+        $('#comment-history-container').html(historyHtml);
+
+        // Bind event handlers after rendering
+        bindCommentActionHandlers(transactionId);
+      } else {
+        $('#comment-history-container').html(
+          '<div class="alert alert-info">No comment history available for this transaction.</div>'
+        );
+      }
+    },
+    error: function() {
+      $('#comment-history-container').html(
+        '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> Error: Could not load comment history</div>'
+      );
+    }
+  });
+}
+function bindCommentActionHandlers(transactionId) {
+  // Add comment
+  $('#add-comment-btn').off('click').on('click', function() {
+    const newText = $('#new-comment-text').val().trim();
+    if (!newText) {
+      alert('Please enter a comment.');
+      return;
+    }
+
+    $.ajax({
+      url: '{% url "transactions:save_transaction_comment" %}',
+      type: 'POST',
+      data: {
+        'transaction_id': transactionId,
+        'comment': newText,
+        'csrfmiddlewaretoken': '{{ csrf_token }}'
+      },
+      success: function(response) {
+        if (response.success) {
+          $('#new-comment-text').val('');
+          loadCommentHistory(transactionId);  // Refresh history
+        } else {
+          alert('Error adding comment: ' + (response.error || 'Unknown error'));
+        }
+      },
+      error: function() {
+        alert('Error adding comment.');
+      }
+    });
+  });
+
+
+  // Delete comment
+  $('.delete-comment-btn').off('click').on('click', function() {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+
+    const commentId = $(this).data('comment-id');
+
+    $.ajax({
+      url: '{% url "transactions:delete_transaction_comment" %}',
+      type: 'POST',
+      data: {
+        'comment_id': commentId,
+        'csrfmiddlewaretoken': '{{ csrf_token }}'
+      },
+      success: function(response) {
+        if (response.success) {
+          loadCommentHistory(transactionId);
+        } else {
+          alert('Error deleting comment: ' + (response.error || 'Unknown error'));
+        }
+      },
+      error: function() {
+        alert('Error deleting comment.');
+      }
+    });
+  });
+}
+
+    /**
+     * Initialize the comment editing functionality
+     */
+    function initCommentEditing() {
+      console.log('Initializing comment editing');
+
+      // Add click handler to editable comment cells - using event delegation
+      $('#transactions-table tbody').on('click', 'td.editable-comment', function(e) {
+        // Don't trigger edit if clicking on the history button
+        if ($(e.target).hasClass('comment-history-btn') || $(e.target).closest('.comment-history-btn').length) {
+          return;
+        }
+
+        const cell = $(this);
+        const row = cell.closest('tr');
+        const transactionId = row.data('id');
+        const currentComment = cell.text().trim();
+        const project = '{{ project_name }}';
+
+        // Don't create editor if already editing
+        if (cell.find('textarea').length > 0) {
+          return;
+        }
+
+        // Create textarea with current comment value
+        const textarea = $('<textarea class="form-control comment-editor" rows="2"></textarea>')
+          .val(currentComment);
+
+        // Create save and cancel buttons
+        const saveBtn = $('<button class="btn btn-sm btn-success mr-1"><i class="bi bi-check"></i> Save</button>');
+        const cancelBtn = $('<button class="btn btn-sm btn-secondary"><i class="bi bi-x"></i> Cancel</button>');
+        const btnGroup = $('<div class="btn-group mt-1"></div>').append(saveBtn).append(cancelBtn);
+
+        // Create container for editor
+        const editorContainer = $('<div class="comment-editor-container"></div>')
+          .append(textarea)
+          .append(btnGroup);
+
+        // Store original content and replace with editor
+        cell.data('original-content', cell.html());
+        cell.html(editorContainer);
+
+        // Focus on the textarea
+        textarea.focus();
+        console.log(project)
+        // Handle save button click
+        saveBtn.on('click', function() {
+          const newComment = textarea.val().trim();
+          saveComment(transactionId, newComment, cell,project);
+        });
+
+        // Handle cancel button click
+        cancelBtn.on('click', function() {
+          cell.html(cell.data('original-content'));
+        });
+
+        // Handle Enter key as save, Esc as cancel
+        textarea.on('keydown', function(e) {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            saveBtn.click();
+          } else if (e.key === 'Escape') {
+            cancelBtn.click();
+          }
+        });
+      });
+    }
+
+    /**
+     * Save comment via AJAX
+     */
+    function saveComment(transactionId, comment, cell,project) {
+      // Show loading indicator
+      cell.html('<div class="text-center"><i class="bi bi-arrow-repeat spin-icon"></i> Saving...</div>');
+
+
+      // Send AJAX request to save comment
+      $.ajax({
+        url: '{% url "transactions:save_transaction_comment" %}',
+        type: 'POST',
+        data: {
+          'transaction_id': transactionId,
+          'comment': comment,
+          'csrfmiddlewaretoken': '{{ csrf_token }}',
+          'project_name': project // Include project name
+        },
+        dataType: 'json',
+        success: function(response) {
+          if (response.success) {
+            // Update cell with new comment and add success indicator
+            cell.html(comment + ' <span class="text-success"><i class="bi bi-check-circle"></i></span>');
+
+            // Remove success indicator after 2 seconds
+            setTimeout(function() {
+              cell.text(comment);
+              // Ensure the cell maintains its editable class
+              cell.addClass('editable-comment');
+            }, 2000);
+          } else {
+            // Show error and restore original content after 3 seconds
+            cell.html('<div class="text-danger"><i class="bi bi-exclamation-circle"></i> Error: ' +
+                     (response.error || 'Could not save comment') + '</div>');
+
+            setTimeout(function() {
+              cell.html(cell.data('original-content'));
+            }, 5000);
+          }
+        },
+        error: function(response) {
+
+          // Show error and restore original content after 3 seconds
+          cell.html('<div class="text-danger"><i class="bi bi-exclamation-circle"></i> Error: Could not connect to server</div>');
+
+          setTimeout(function() {
+            cell.html(cell.data('original-content'));
+          }, 3000);
+        }
+      });
+    }
+
+    /**
+     * Calculate totals for the debit and credit columns
+     */
+    function calculateColumnTotals() {
+      let totalDebit = 0;
+      let totalCredit = 0;
+
+      $('#transactions-table tbody tr').each(function() {
+        // Get debit and credit values
+        const debitValue = parseFloat($(this).find('td:nth-child(9)').text()) || 0;
+        const creditValue = parseFloat($(this).find('td:nth-child(10)').text()) || 0;
+
+        // Add to totals
+        totalDebit += debitValue;
+        totalCredit += creditValue;
+      });
+
+      // Update total display
+      $('#total-debit').text(totalDebit.toFixed(2));
+      $('#total-credit').text(totalCredit.toFixed(2));
+    }
+
+    /**
+     * Initialize search functionality
+     */
+
+function initSearch() {
+  // Toggle advanced filters
+  $('#toggle-advanced-filters').on('click', function() {
+    $('#advanced-filters').collapse('toggle');
+    const icon = $(this).find('i');
+    icon.toggleClass('bi-funnel bi-funnel-fill');
+  });
+
+  // Quick search functionality (existing)
+  $('#quick-search-button').on('click', function() {
+    performQuickSearch();
+  });
+
+  $('#table-search').on('keypress', function(e) {
+    if (e.which === 13) {
+      performQuickSearch();
+    }
+  });
+
+  // Support filter change handler
+  $('#support-filter').on('change', function() {
+    applyFiltersAndRedirect();
+  });
+
+  // Advanced filters
+  $('#apply-advanced-filters').on('click', function() {
+    applyFiltersAndRedirect();
+  });
+
+  // Clear advanced filters
+  $('#clear-advanced-filters').on('click', function() {
+    $('#advanced-filter-form')[0].reset();
+    applyFiltersAndRedirect();
+  });
+
+  // Reset all filters
+  $('#reset-all-filters').on('click', function() {
+    // Clear all form inputs
+    $('#table-search').val('');
+    $('#search-column').val('all');
+    $('#support-filter').val('all');
+    $('#advanced-filter-form')[0].reset();
+
+    // Redirect to clean URL
+    window.location.href = window.location.pathname;
+  });
+
+  // Initialize form values from URL parameters
+  initializeFiltersFromURL();
+}
+
+function performQuickSearch() {
+  const searchTerm = $('#table-search').val().trim();
+  const searchColumn = $('#search-column').val();
+
+  // Get current URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+
+  // Update quick search parameters
+  if (searchTerm) {
+    urlParams.set('search', searchTerm);
+    urlParams.set('search_column', searchColumn);
+  } else {
+    urlParams.delete('search');
+    urlParams.delete('search_column');
+  }
+
+  // Reset to first page when searching
+  urlParams.set('page', '1');
+
+  // Redirect with new parameters
+  window.location.search = urlParams.toString();
+}
+
+function applyFiltersAndRedirect() {
+  // Get current URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+
+  // Get support filter
+  const supportFilter = $('#support-filter').val();
+  if (supportFilter !== 'all') {
+    urlParams.set('support_filter', supportFilter);
+  } else {
+    urlParams.delete('support_filter');
+  }
+
+  // Get advanced filter values
+  const advancedFilters = {
+    'filter_period': $('#filter_period').val().trim(),
+    'filter_source': $('#filter_source').val().trim(),
+    'filter_reference': $('#filter_reference').val().trim(),
+    'filter_account': $('#filter_account').val().trim(),
+    'filter_description': $('#filter_description').val().trim(),
+    'filter_posting_sequence': $('#filter_posting_sequence').val().trim(),
+    'filter_date_from': $('#filter_date_from').val(),
+    'filter_date_to': $('#filter_date_to').val(),
+    'filter_amount_from': $('#filter_amount_from').val(),
+    'filter_amount_to': $('#filter_amount_to').val(),
+  };
+
+  // Add or remove advanced filter parameters
+  Object.keys(advancedFilters).forEach(key => {
+    const value = advancedFilters[key];
+    if (value) {
+      urlParams.set(key, value);
+    } else {
+      urlParams.delete(key);
+    }
+  });
+
+  // Reset to first page when filtering
+  urlParams.set('page', '1');
+
+  // Redirect with new parameters
+  window.location.search = urlParams.toString();
+}
+
+function initializeFiltersFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+
+  // Set quick search values
+  const searchTerm = urlParams.get('search');
+  const searchColumn = urlParams.get('search_column');
+  const supportFilter = urlParams.get('support_filter');
+
+  if (searchTerm) $('#table-search').val(searchTerm);
+  if (searchColumn) $('#search-column').val(searchColumn);
+  if (supportFilter) $('#support-filter').val(supportFilter);
+
+  // Set advanced filter values
+  const advancedFilters = [
+    'filter_period', 'filter_source', 'filter_reference', 'filter_account',
+    'filter_description', 'filter_posting_sequence', 'filter_date_from',
+    'filter_date_to', 'filter_amount_from', 'filter_amount_to'
+  ];
+
+  let hasAdvancedFilters = false;
+  advancedFilters.forEach(filterName => {
+    const value = urlParams.get(filterName);
+    if (value) {
+      $(`#${filterName}`).val(value);
+      hasAdvancedFilters = true;
+    }
+  });
+
+  // Auto-expand advanced filters if any are active
+  if (hasAdvancedFilters) {
+    $('#advanced-filters').collapse('show');
+    $('#toggle-advanced-filters i').removeClass('bi-funnel').addClass('bi-funnel-fill');
+  }
+}
+
+
+
+function buildPaginationURL(pageNum) {
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set('page', pageNum);
+  return '?' + urlParams.toString();
+}
+
+    // Initialize charts if needed
+
+  });
+</script>
+
+<style>
+/* Add spinning animation for loading indicators */
+.spin-icon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+</style>
+{% endblock custom_js %}

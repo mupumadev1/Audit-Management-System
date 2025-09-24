@@ -1,0 +1,761 @@
+{% extends 'reports/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_css %}
+<style>
+.fully-supported {
+    background-color: #d4edda !important;
+    border-left: 4px solid #28a745;
+}
+
+.fully-supported:hover {
+    background-color: #c3e6cb !important;
+}
+
+/* Error state indicator */
+.has-error {
+    background-color: #f8d7da !important;
+    border-left: 4px solid #dc3545;
+}
+
+.has-error:hover {
+    background-color: #f1b0b7 !important;
+}
+
+/* Empty state styling */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.empty-state h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+/* Improved loading states */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: opacity 0.3s ease;
+}
+
+.loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loading-content {
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.loading-subtext {
+    font-size: 14px;
+    color: #999;
+}
+
+/* Improved skeleton animations */
+@keyframes shimmer {
+    0% {
+        background-position: -200px 0;
+    }
+    100% {
+        background-position: calc(200px + 100%) 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200px 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .loading-overlay {
+        padding: 20px;
+    }
+    
+    .loading-text {
+        font-size: 14px;
+    }
+    
+    .loading-subtext {
+        font-size: 12px;
+    }
+    
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    table {
+        min-width: 600px;
+    }
+}
+    .dashboard-container {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .filter-form {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+
+    .form-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin: 0 -10px;
+    }
+
+    .form-group {
+        flex: 1;
+        min-width: 200px;
+        padding: 0 10px;
+        margin-bottom: 15px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+
+    .form-select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+        background-color: white;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-start;
+        padding: 0 10px;
+        margin-top: 10px;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+    }
+
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+        margin-left: 10px;
+    }
+
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .summary-box {
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+
+    .table-container {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 30px;
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    table th, table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+    table th {
+        text-align: left;
+        color: var(--secondary-color);
+    }
+
+    table tbody tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+
+    table tbody tr:hover {
+        background-color: #f0f0f0;
+    }
+
+    .project-link {
+        color: var(--link-color);
+        text-decoration: none;
+    }
+
+    .project-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Skeleton Loading Styles */
+    @keyframes shimmer {
+        0% {
+            background-position: -200px 0;
+        }
+        100% {
+            background-position: calc(200px + 100%) 0;
+        }
+    }
+
+    .skeleton {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200px 100%;
+        animation: shimmer 1.5s infinite;
+        border-radius: 4px;
+    }
+
+    .skeleton-text {
+        height: 16px;
+        margin-bottom: 8px;
+    }
+
+    .skeleton-text.large {
+        height: 24px;
+    }
+
+    .skeleton-text.small {
+        height: 12px;
+    }
+
+    .skeleton-text.w-full {
+        width: 100%;
+    }
+
+    .skeleton-text.w-75 {
+        width: 75%;
+    }
+
+    .skeleton-text.w-50 {
+        width: 50%;
+    }
+
+    .skeleton-text.w-25 {
+        width: 25%;
+    }
+
+    /* Loading States */
+    .loading-state {
+        display: block;
+    }
+
+    .content-loaded {
+        display: none;
+    }
+
+    .loaded .loading-state {
+        display: none;
+    }
+
+    .loaded .content-loaded {
+        display: block;
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        transition: opacity 0.3s ease;
+    }
+
+    .loading-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 10px;
+        font-size: 16px;
+        color: #666;
+        text-align: center;
+    }
+
+    /* Error State */
+    .error-state {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        display: none;
+    }
+
+    .error-state.show {
+        display: block;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .form-group {
+            flex-basis: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="text-center mb-20">All Projects</h1>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div>
+            <div class="loading-spinner"></div>
+            <div class="loading-text">Loading project data...</div>
+        </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="error-state" class="error-state">
+        <strong>Error:</strong> Unable to load project data. Please try refreshing the page.
+    </div>
+
+    <div class="filter-form">
+        <!-- Filter Form -->
+        <form id="filter-form" class="form-row">
+            <div class="form-group">
+                <label for="project-name" class="form-label">Project Name:</label>
+                <select id="project-name" name="project_name" class="form-select">
+                    <option value="">All Projects</option>
+                    <!-- Project options will be dynamically populated -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="supported-transactions" class="form-label">Supported Transactions:</label>
+                <input type="number" id="supported-transactions" name="supported_transactions" class="form-control"
+                    placeholder="Enter # of Transactions">
+            </div>
+            <div class="form-group">
+                <label for="supported-value" class="form-label">Supported Value:</label>
+                <input type="number" id="supported-value" name="supported_value" class="form-control"
+                    placeholder="Enter Total Value">
+            </div>
+            <div class="form-group">
+                <label for="unsupported-transactions" class="form-label">Unsupported Transactions:</label>
+                <input type="number" id="unsupported-transactions" name="unsupported_transactions"
+                    class="form-control" placeholder="Enter # of Transactions">
+            </div>
+            <div class="form-group">
+                <label for="unsupported-value" class="form-label">Unsupported Value:</label>
+                <input type="number" id="unsupported-value" name="unsupported_value" class="form-control"
+                    placeholder="Enter Total Value">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="filter-btn">Filter</button>
+                <button type="button" class="btn btn-secondary" id="reset-button">Reset</button>
+            </div>
+        </form>
+
+        <!-- Summary Section - Loading State -->
+        <div id="summary-loading" class="loading-state">
+            <div class="summary-box">
+                <div class="skeleton skeleton-text w-75"></div>
+            </div>
+        </div>
+
+        <!-- Summary Section - Loaded Content -->
+        <div id="summary-section" class="content-loaded summary-box" role="alert">
+            <!-- Summary information will be displayed here -->
+        </div>
+
+        <!-- Table Container - Loading State -->
+        <div id="table-loading" class="loading-state">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Supported Transactions</th>
+                            <th>Supported Value</th>
+                            <th>Unsupported Transactions</th>
+                            <th>Unsupported Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Skeleton Rows -->
+                        {% for i in "12345678"|make_list %}
+                        <tr>
+                            <td><div class="skeleton skeleton-text w-{% cycle '75' '50' '60' '70' %}"></div></td>
+                            <td><div class="skeleton skeleton-text w-{% cycle '50' '25' '40' '35' %}"></div></td>
+                            <td><div class="skeleton skeleton-text w-{% cycle '75' '60' '50' '65' %}"></div></td>
+                            <td><div class="skeleton skeleton-text w-{% cycle '50' '25' '40' '30' %}"></div></td>
+                            <td><div class="skeleton skeleton-text w-{% cycle '75' '60' '55' '70' %}"></div></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Table Container - Loaded Content -->
+        <div id="table-content" class="content-loaded">
+            <div class="table-container">
+                <table id="project-table">
+                    <thead>
+                        <tr>
+                            <th>Project Name</th>
+                            <th>Supported Transactions</th>
+                            <th>Supported Value</th>
+                            <th>Unsupported Transactions</th>
+                            <th>Unsupported Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Content will be populated via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Updated JavaScript section in your template -->
+{% block extra_js %}
+<script>
+    let projectsData = [];
+    let isLoading = true;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize the page
+        initializePage();
+        
+        // Load project data via AJAX
+        loadProjectData();
+        
+        // Set up event listeners
+        setupEventListeners();
+    });
+
+    function initializePage() {
+        // Disable form controls during loading
+        toggleFormControls(false);
+        
+        // Show loading overlay
+        //showLoadingOverlay();
+        
+        // Show skeleton content
+        showSkeletonContent();
+    }
+
+    function setupEventListeners() {
+        document.getElementById('filter-form').addEventListener('submit', handleFilterSubmit);
+        document.getElementById('reset-button').addEventListener('click', resetFilters);
+    }
+
+    function loadProjectData() {
+        // Get current URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Build API URL with parameters
+        const apiUrl = `{{ api_endpoint }}?${urlParams.toString()}`;
+        
+        fetch(apiUrl, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(data);
+            processProjectData(data);
+        })
+        .catch(error => {
+            console.error('Error loading data:', error);
+            showErrorState();
+        });
+    }
+
+    function processProjectData(data) {
+        // Store the data
+        projectsData = data;
+        
+        // Populate the table
+        populateProjectTable(data.data.top_projects);
+        
+        // Populate dropdown
+        populateProjectDropdown(data.data.top_projects);
+        
+        // Update summary with server data
+        updateSummaryFromServer(data.data);
+        
+        // Hide loading and show content
+        hideLoadingOverlay();
+        showContent();
+        
+        // Enable form controls
+        toggleFormControls(true);
+        
+        isLoading = false;
+    }
+
+    function populateProjectTable(projects) {
+        const tbody = document.querySelector('#project-table tbody');
+        tbody.innerHTML = '';
+        
+        if (projects.length === 0) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="5" style="text-align: center; padding: 20px; color: #666;">
+                    No projects found matching your criteria.
+                </td>
+            `;
+            tbody.appendChild(row);
+            return;
+        }
+        
+        projects.forEach(project => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <a href="${project.project_url}" class="project-link">
+                        ${project.project_name}
+                    </a>
+                </td>
+                <td>${project.supported_transactions_number.toLocaleString()}</td>
+                <td>${project.supported_transactions_value.toLocaleString()}</td>
+                <td>${project.unsupported_transactions_number.toLocaleString()}</td>
+                <td>${project.unsupported_transactions_value.toLocaleString()}</td>
+            `;
+            
+            // Add visual indicator for fully supported projects
+            if (project.is_fully_supported) {
+                row.classList.add('fully-supported');
+            }
+            
+            // Add error indicator if project has errors
+            if (project.has_error) {
+                row.classList.add('has-error');
+                row.title = 'Error loading project data';
+            }
+            
+            tbody.appendChild(row);
+        });
+    }
+
+    function populateProjectDropdown(projects) {
+        const projectDropdown = document.getElementById('project-name');
+        
+        // Clear existing options except the first one
+        while (projectDropdown.children.length > 1) {
+            projectDropdown.removeChild(projectDropdown.lastChild);
+        }
+        
+        // Get unique project names
+        const uniqueProjects = [...new Set(projects.map(p => p.project_name))];
+        
+        uniqueProjects.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            projectDropdown.appendChild(option);
+        });
+    }
+
+    function handleFilterSubmit(e) {
+        e.preventDefault();
+        
+        if (isLoading) return;
+        
+        // Show loading state
+        showLoadingOverlay();
+        toggleFormControls(false);
+        isLoading = true;
+        
+        // Build new URL with filter parameters
+        const formData = new FormData(e.target);
+        const urlParams = new URLSearchParams();
+        
+        for (let [key, value] of formData.entries()) {
+            if (value.trim()) {
+                urlParams.append(key, value);
+            }
+        }
+        
+        // Preserve existing URL parameters not in the form
+        const currentParams = new URLSearchParams(window.location.search);
+        for (let [key, value] of currentParams.entries()) {
+            if (!formData.has(key)) {
+                urlParams.append(key, value);
+            }
+        }
+        
+        // Update URL without page reload
+        const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+        window.history.pushState({}, '', newUrl);
+        
+        // Load filtered data
+        loadProjectData();
+    }
+
+    function resetFilters() {
+        if (isLoading) return;
+        
+        // Clear form
+        document.getElementById('filter-form').reset();
+        
+        // Update URL
+        window.history.pushState({}, '', window.location.pathname);
+        
+        // Show loading state
+        showLoadingOverlay();
+        toggleFormControls(false);
+        isLoading = true;
+        
+        // Reload data
+        loadProjectData();
+    }
+
+    function updateSummaryFromServer(summary) {
+        const summarySection = document.getElementById('summary-section');
+        summarySection.innerHTML = `
+            <strong>Summary:</strong> 
+            Showing ${summary.total_projects} projects | 
+            Fully Supported: ${summary.fully_supported_projects} | 
+            Total Supported Transactions: ${summary.total_supported_transactions.toLocaleString()} | 
+            Total Supported Value: ${summary.total_supported_value.toLocaleString()} | 
+            Total Unsupported Transactions: ${summary.total_unsupported_transactions.toLocaleString()} | 
+            Total Unsupported Value: ${summary.total_unsupported_value.toLocaleString()}
+        `;
+    }
+
+    function showSkeletonContent() {
+        document.body.classList.remove('loaded');
+    }
+
+    function showContent() {
+        document.body.classList.add('loaded');
+    }
+
+    function showLoadingOverlay() {
+        const overlay = document.getElementById('loading-overlay');
+        overlay.classList.remove('hidden');
+    }
+
+    function hideLoadingOverlay() {
+        const overlay = document.getElementById('loading-overlay');
+        overlay.classList.add('hidden');
+    }
+
+    function showErrorState() {
+        const errorState = document.getElementById('error-state');
+        errorState.classList.add('show');
+        hideLoadingOverlay();
+        toggleFormControls(true);
+        isLoading = false;
+    }
+
+    function toggleFormControls(enabled) {
+        const controls = document.querySelectorAll('.form-control, .form-select, .btn');
+        controls.forEach(control => {
+            control.disabled = !enabled;
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}
