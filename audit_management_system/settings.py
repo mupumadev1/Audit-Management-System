@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'main_app',
     'transactions',
     'reports',
+    'django_apscheduler',
 ]
 
 MIDDLEWARE = [
@@ -82,7 +83,7 @@ DATABASES = {
         "HOST": "localhost",
         "PORT": "3306",
     },
-    'sql_server': {
+    'DAPDAT': {
         'ENGINE': 'mssql',
         'NAME': 'INFDAT',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -93,7 +94,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_esn': {
+    '340ESN': {
         'ENGINE': 'mssql',
         'NAME': '340ESN',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -104,7 +105,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_drp': {
+    '330DRP': {
         'ENGINE': 'mssql',
         'NAME': '330DRP',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -115,7 +116,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_sam': {
+    '320SAM': {
         'ENGINE': 'mssql',
         'NAME': '320SAM',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -126,7 +127,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_gav': {
+    '310GAV': {
         'ENGINE': 'mssql',
         'NAME': '310GAV',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -137,7 +138,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_chz': {
+    '300CHZ': {
         'ENGINE': 'mssql',
         'NAME': '300CHZ',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -148,7 +149,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_a2c': {
+    '291A2C': {
         'ENGINE': 'mssql',
         'NAME': '291A2C',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -159,7 +160,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_dod': {
+    '281DOD': {
         'ENGINE': 'mssql',
         'NAME': '281DOD',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -170,7 +171,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_tbp': {
+    '270TBP': {
         'ENGINE': 'mssql',
         'NAME': '270TBP',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -181,7 +182,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_tbo': {
+    '260TBO': {
         'ENGINE': 'mssql',
         'NAME': '260TBO',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -192,7 +193,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_fat': {
+    '250FAT': {
         'ENGINE': 'mssql',
         'NAME': '250FAT',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -203,7 +204,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_mal': {
+    '240MAL': {
         'ENGINE': 'mssql',
         'NAME': '240MAL',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -214,7 +215,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_hiv': {
+    '230HIV': {
         'ENGINE': 'mssql',
         'NAME': '230HIV',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -280,7 +281,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_031clm': {
+    '031CLM': {
         'ENGINE': 'mssql',
         'NAME': '031CLM',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -291,7 +292,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_eaa': {
+    '040EAA': {
         'ENGINE': 'mssql',
         'NAME': '040EAA',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -302,7 +303,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_nhq': {
+    '050NHQ': {
         'ENGINE': 'mssql',
         'NAME': '050NHQ',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -313,7 +314,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_pnd': {
+    '060PND': {
         'ENGINE': 'mssql',
         'NAME': '060PND',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -324,7 +325,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_yia': {
+    '070YIA': {
         'ENGINE': 'mssql',
         'NAME': '070YIA',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -335,7 +336,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_cad': {
+    '090CAD': {
         'ENGINE': 'mssql',
         'NAME': '090CAD',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -346,7 +347,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_cak': {
+    '100CAK': {
         'ENGINE': 'mssql',
         'NAME': '100CAK',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -357,7 +358,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_cwf': {
+    '110CWF': {
         'ENGINE': 'mssql',
         'NAME': '110CWF',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -367,8 +368,38 @@ DATABASES = {
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
+    }, '120CCM': {
+        'ENGINE': 'mssql',
+        'NAME': '120CCM',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    }, '280DOD': {
+        'ENGINE': 'mssql',
+        'NAME': '280DOD',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
+    }, '290A2C': {
+        'ENGINE': 'mssql',
+        'NAME': '280DOD',
+        'USER': 'sa',  # os.environ.get('DATABASE_USER'),
+        'PASSWORD': 'Admin123',
+        'HOST': 'localhost',
+        'PORT': '1433',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 17 for SQL Server',
+        },
     },
-    'sql_server_130cam': {
+    '130CAM': {
         'ENGINE': 'mssql',
         'NAME': '130CAM',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -379,7 +410,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_140cam': {
+    '140CAM': {
         'ENGINE': 'mssql',
         'NAME': '140CAM',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -390,7 +421,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_ctm': {
+    '150CTM': {
         'ENGINE': 'mssql',
         'NAME': '150CTM',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -401,7 +432,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_mce': {
+    '160MCE': {
         'ENGINE': 'mssql',
         'NAME': '160MCE',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -412,7 +443,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_soh': {
+    '170SOH': {
         'ENGINE': 'mssql',
         'NAME': '170SOH',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -423,7 +454,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_hrc': {
+    '180HRC': {
         'ENGINE': 'mssql',
         'NAME': '180HRC',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -434,7 +465,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_kmh': {
+    '190KMH': {
         'ENGINE': 'mssql',
         'NAME': '190KMH',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -445,7 +476,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_yfc': {
+    '200YFC': {
         'ENGINE': 'mssql',
         'NAME': '200YFC',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -456,7 +487,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_fcn': {
+    '210FCN': {
         'ENGINE': 'mssql',
         'NAME': '210FCN',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -467,7 +498,7 @@ DATABASES = {
             'driver': 'ODBC Driver 17 for SQL Server',
         },
     },
-    'sql_server_fcs': {
+    '220FCS': {
         'ENGINE': 'mssql',
         'NAME': '220FCS',
         'USER': 'sa',  # os.environ.get('DATABASE_USER'),
@@ -484,15 +515,22 @@ AUTH_USER_MODEL = 'main_app.CustomUser'
 STATIC_URL = "/static/"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-CELERY_BEAT_SCHEDULE = {
-    'sync-transactions': {
-        'task': 'main_app.tasks.schedule_sync_transactions',
-        'schedule': 300.0,  # Run every 5 minutes
-        # 'schedule': crontab(minute=0, hour='*/2'),  # Every 2 hours
-    },
-}
 
-SYNC_ALERT_EMAILS = ['mupumamgtsdev@gmail.com']
+SYNC_CONFIG = {
+    'INTERVAL_MINUTES': 5,
+    'MAX_WORKERS': 5,
+    'TIMEOUT_MINUTES': 10,
+    'LOCK_TIMEOUT_MINUTES': 15,
+    'MAX_CONSECUTIVE_FAILURES': 3,
+    'ALERT_EMAIL': 'seriterkunda@mupuma.co.zm',
+}
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend',
+EMAIL_HOST = 'smtp.gmail.com',
+EMAIL_PORT = 587,
+EMAIL_USE_TLS = True,
+EMAIL_HOST_USER = 'mupumamgtsdev@gmail.com',
+EMAIL_HOST_PASSWORD = 'nnbhieknirlbtvcx',
+DEFAULT_FROM_EMAIL = 'mupumamgtsdev@gmail.com'
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # Password validation

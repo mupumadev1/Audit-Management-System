@@ -1,0 +1,615 @@
+{% extends 'reports/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .dashboard-title {
+        margin: 0;
+        color: var(--primary-color);
+    }
+    
+    .dashboard-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .filters-section {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .filters-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        align-items: end;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        min-width: 150px;
+    }
+    
+    .filter-group label {
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: var(--secondary-color);
+    }
+    
+    .filter-group select,
+    .filter-group input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .search-group {
+        flex: 1;
+        min-width: 250px;
+    }
+    
+    .search-container {
+        position: relative;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 8px 12px 8px 35px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #999;
+    }
+    
+    .btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+    
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background-color: #545b62;
+    }
+    
+    .btn-outline {
+        background-color: transparent;
+        color: var(--primary-color);
+        border: 1px solid var(--primary-color);
+    }
+    
+    .btn-outline:hover {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .projects-table-container {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        margin-bottom: 30px;
+        overflow-x: auto;
+    }
+    
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .table-title {
+        margin: 0;
+        color: var(--secondary-color);
+    }
+    
+    .table-info {
+        color: #666;
+        font-size: 14px;
+    }
+    
+    .projects-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 800px;
+    }
+    
+    .projects-table th,
+    .projects-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+    }
+    
+    .projects-table th {
+        background-color: #f8f9fa;
+        color: var(--secondary-color);
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .projects-table th.sortable {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+    }
+    
+    .projects-table th.sortable:hover {
+        background-color: #e9ecef;
+    }
+    
+    .projects-table th.sortable::after {
+        content: "↕";
+        position: absolute;
+        right: 8px;
+        opacity: 0.5;
+    }
+    
+    .projects-table th.sorted-asc::after {
+        content: "↑";
+        opacity: 1;
+    }
+    
+    .projects-table th.sorted-desc::after {
+        content: "↓";
+        opacity: 1;
+    }
+    
+    .projects-table tbody tr:hover {
+        background-color: #f9f9f9;
+    }
+    
+    .project-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .project-link:hover {
+        text-decoration: underline;
+    }
+    
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .status-completed {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-in-progress {
+        background-color: #cce7ff;
+        color: #004085;
+    }
+    
+    .status-error {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    
+    .pagination {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+    }
+    
+    .pagination a,
+    .pagination span {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        text-decoration: none;
+        color: var(--primary-color);
+        border-radius: 4px;
+    }
+    
+    .pagination .current {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .pagination a:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+    
+    .no-results h4 {
+        margin-bottom: 10px;
+    }
+    
+    .export-options {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .active-filters {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    
+    .filter-tag {
+        display: inline-block;
+        background-color: var(--primary-color);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-right: 8px;
+        margin-bottom: 5px;
+    }
+    
+    @media (max-width: 768px) {
+        .dashboard-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 15px;
+        }
+        
+        .dashboard-controls {
+            justify-content: center;
+        }
+        
+        .filters-row {
+            flex-direction: column;
+        }
+        
+        .filter-group,
+        .search-group {
+            width: 100%;
+        }
+        
+        .table-header {
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .projects-table {
+            font-size: 12px;
+        }
+        
+        .projects-table th,
+        .projects-table td {
+            padding: 8px 10px;
+        }
+        
+        .pagination-container {
+            flex-direction: column;
+            gap: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Full Project Dashboard</h1>
+        <div class="dashboard-controls">
+            <a href="{% url 'main_app:projects_overview' %}" class="btn btn-outline">← Back to Overview</a>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+        <form method="GET" id="filterForm">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label for="fiscal_year">Fiscal Year</label>
+                    <select name="fiscal_year" id="fiscal_year">
+                        <option value="">All Years</option>
+                        {% for year in available_years %}
+                            <option value="{{ year }}" {% if year == selected_fiscal_year %}selected{% endif %}>
+                                {{ year }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="fiscal_period">Fiscal Period</label>
+                    <select name="fiscal_period" id="fiscal_period">
+                        <option value="">All Periods</option>
+                        {% for period in available_periods %}
+                            <option value="{{ period }}" {% if period == selected_fiscal_period %}selected{% endif %}>
+                                Period {{ period }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="search-group">
+                    <label for="search">Search Projects</label>
+                    <div class="search-container">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" 
+                               name="search" 
+                               id="search" 
+                               class="search-input"
+                               placeholder="Search by project name or description..."
+                               value="{{ search_query }}">
+                    </div>
+                </div>
+                
+                <div class="filter-group">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                    <a href="{% url 'main_app:view_project_dashboard' %}" class="btn btn-secondary">Clear All</a>
+                </div>
+            </div>
+            
+            {% if selected_fiscal_year or selected_fiscal_period or search_query %}
+                <div class="active-filters">
+                    <strong>Active Filters:</strong>
+                    {% if selected_fiscal_year %}
+                        <span class="filter-tag">Year: {{ selected_fiscal_year }}</span>
+                    {% endif %}
+                    {% if selected_fiscal_period %}
+                        <span class="filter-tag">Period: {{ selected_fiscal_period }}</span>
+                    {% endif %}
+                    {% if search_query %}
+                        <span class="filter-tag">Search: "{{ search_query }}"</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Projects Table -->
+    <div class="projects-table-container">
+        <div class="table-header">
+            <h3 class="table-title">
+                {% if search_query %}
+                    Search Results for "{{ search_query }}"
+                {% elif selected_fiscal_year or selected_fiscal_period %}
+                    Filtered Projects
+                {% else %}
+                    All Projects
+                {% endif %}
+            </h3>
+            <div class="table-info">
+                {% if projects.paginator %}
+                    Showing {{ projects.start_index }} - {{ projects.end_index }} of {{ projects.paginator.count }} projects
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if projects %}
+            <table class="projects-table" id="projectsTable">
+                <thead>
+                    <tr>
+                        <th class="sortable" data-sort="project_name">
+                            Project Name
+                            {% if sort_by == 'project_name' %}
+                                {% if order == 'desc' %}
+                                    <span class="sort-indicator">↓</span>
+                                {% else %}
+                                    <span class="sort-indicator">↑</span>
+                                {% endif %}
+                            {% endif %}
+                        </th>
+                        <th>Description</th>
+                        <th class="sortable" data-sort="supported_transactions_number">
+                            Supported Trans.
+                        </th>
+                        <th class="sortable" data-sort="supported_transactions_value">
+                            Supported Value (K)
+                        </th>
+                        <th class="sortable" data-sort="unsupported_transactions_number">
+                            Unsupported Trans.
+                        </th>
+                        <th class="sortable" data-sort="unsupported_transactions_value">
+                            Unsupported Value (K)
+                        </th>
+                        <th class="sortable" data-sort="total_transactions">
+                            Total Trans.
+                        </th>
+                        <th>Status</th>
+                        <th>Last Synced</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'main_app:project_detail' project.project_name %}" class="project-link">
+                                {{ project.project_name }}
+                            </a>
+                        </td>
+                        <td>
+                            <div style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" 
+                                 title="{{ project.description }}">
+                                {{ project.description|truncatechars:50 }}
+                            </div>
+                        </td>
+                        <td>{{ project.supported_transactions_number|intcomma }}</td>
+                        <td>{{ project.supported_transactions_value|intcomma }}</td>
+                        <td>{{ project.unsupported_transactions_number|intcomma }}</td>
+                        <td>{{ project.unsupported_transactions_value|intcomma }}</td>
+                        <td><strong>{{ project.total_transactions|intcomma }}</strong></td>
+                        <td>
+                            <span class="status-badge status-{{ project.sync_status }}">
+                                {{ project.sync_status|title }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if project.last_synced %}
+                                {{ project.last_synced|date:"M d, Y H:i" }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <!-- Pagination -->
+            {% if projects.has_other_pages %}
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        Page {{ projects.number }} of {{ projects.paginator.num_pages }}
+                    </div>
+                    <div class="pagination">
+                        {% if projects.has_previous %}
+                            <a href="?page=1&fiscal_year={{ selected_fiscal_year }}&fiscal_period={{ selected_fiscal_period }}&search={{ search_query }}&sort={{ sort_by }}&order={{ order }}">« First</a>
+                            <a href="?page={{ projects.previous_page_number }}&fiscal_year={{ selected_fiscal_year }}&fiscal_period={{ selected_fiscal_period }}&search={{ search_query }}&sort={{ sort_by }}&order={{ order }}">‹ Previous</a>
+                        {% endif %}
+                        
+                        {% for num in projects.paginator.page_range %}
+                            {% if projects.number == num %}
+                                <span class="current">{{ num }}</span>
+                            {% elif num > projects.number|add:'-3' and num < projects.number|add:'3' %}
+                                <a href="?page={{ num }}&fiscal_year={{ selected_fiscal_year }}&fiscal_period={{ selected_fiscal_period }}&search={{ search_query }}&sort={{ sort_by }}&order={{ order }}">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if projects.has_next %}
+                            <a href="?page={{ projects.next_page_number }}&fiscal_year={{ selected_fiscal_year }}&fiscal_period={{ selected_fiscal_period }}&search={{ search_query }}&sort={{ sort_by }}&order={{ order }}">Next ›</a>
+                            <a href="?page={{ projects.paginator.num_pages }}&fiscal_year={{ selected_fiscal_year }}&fiscal_period={{ selected_fiscal_period }}&search={{ search_query }}&sort={{ sort_by }}&order={{ order }}">Last »</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="no-results">
+                <h4>No projects found</h4>
+                <p>
+                    {% if search_query %}
+                        No projects match your search criteria "{{ search_query }}".
+                    {% else %}
+                        No projects found for the selected filters.
+                    {% endif %}
+                </p>
+                <a href="{% url 'main_app:view_project_dashboard' %}" class="btn btn-outline">Clear Filters</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('filterForm');
+    const table = document.getElementById('projectsTable');
+    
+    // Auto-submit form when filters change
+    const selects = form.querySelectorAll('select');
+    selects.forEach(select => {
+        select.addEventListener('change', function() {
+            form.submit();
+        });
+    });
+    
+    // Search input with debounce
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            if (this.value.length === 0 || this.value.length >= 2) {
+                form.submit();
+            }
+        }, 500);
+    });
+    
+    // Sortable columns
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const sortBy = this.dataset.sort;
+            const currentSort = new URLSearchParams(window.location.search).get('sort');
+            const currentOrder = new URLSearchParams(window.location.search).get('order');
+            
+            let newOrder = 'asc';
+            if (currentSort === sortBy && currentOrder === 'asc') {
+                newOrder = 'desc';
+            }
+            
+            const url = new URL(window.location);
+            url.searchParams.set('sort', sortBy);
+            url.searchParams.set('order', newOrder);
+            url.searchParams.set('page', '1'); // Reset to first page
+            
+            window.location.href = url.toString();
+        });
+    });
+    
+    // Add loading state
+    form.addEventListener('submit', function() {
+        if (table) {
+            table.style.opacity = '0.6';
+            table.style.pointerEvents = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

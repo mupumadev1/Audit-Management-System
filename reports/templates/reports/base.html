@@ -16,7 +16,7 @@
             --text-color: #333;
             --link-color: #3498db;
             --success-color: #2ecc71;
-            --warning-color: #f39c12;
+            --warning-color: #F59E0B;
             --danger-color: #e74c3c;
         }
 
@@ -137,11 +137,12 @@
 <body>
     <header>
         <div class="container">
-            <h1 class="site-title"><a href="/reports/static">Document Management System</a></h1>
+            <h1 class="site-title"><a href="{% url 'main_app:landing_dashboard' %}">Document Management System</a></h1>
             <nav>
                 <ul>
+
                     <li><a href="{% url 'main_app:landing_dashboard' %}">Home</a></li>
-                    <li><a href="{% url 'main_app:view_project_dashboard' %}">Projects</a></li>
+                     <li><a href="{% url 'main_app:view_project_dashboard' %}">Projects</a></li>
                     <li><a href="{% url 'main_app:logout' %}">Log out</a></li>
                 </ul>
             </nav>

@@ -1,22 +1,19 @@
-import logging
-from asyncio import as_completed
-from concurrent.futures import ThreadPoolExecutor
-from datetime import timezone, datetime
-from decimal import Decimal
-from typing import Dict
-
-from django.db import transaction, connections
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
+from django.urls import reverse
 
 from transactions.models import SupportingDocument
-from .models import Project, DatabaseMapping, SyncLog  # Import project model
-from django.db.models import Sum
+from .models import Project
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.models import User
 
+from .services import TransactionSyncService
+from .sync_tasks import sync_transactions
+
+import logging
 logger = logging.getLogger(__name__)
-
 
 # Helper functions to check user roles
 def is_admin(user):
@@ -36,9 +33,9 @@ def login_view(request):
         if user is not None:
             login(request, user)
             if user.is_superuser:
-                return redirect('main_app:landing_dashboard')
+                return redirect('main_app:view_project_dashboard')
             elif user.is_staff:
-                return redirect('main_app:landing_dashboard')
+                return redirect('main_app:view_project_dashboard')
         else:
             return render(request, 'main_app/login.html', {'error': 'Invalid credentials'})
     return render(request, 'main_app/login.html')
@@ -69,343 +66,338 @@ def staff_dashboard(request):
     context = {
         'message': 'Welcome to the Staff Dashboard',
     }
-    return render(request, 'project_templates/landing_dashboard.html', context)
+    return render(request, 'project_templates/full_project_dashboard.html', context)
 
 
 @login_required
-def landing_dashboard(request):
-    """
-    View function for the landing dashboard, showing project transaction statistics
-    """
-    # Get all projects from the database
-    projects = Project.objects.all().order_by('-supported_transactions_value')
-
-    # Calculate totals from actual project data
-    total_supported_transactions = sum(p.supported_transactions_number for p in projects)
-    total_supported_value = sum(p.supported_transactions_value for p in projects)
-    total_unsupported_transactions = sum(p.unsupported_transactions_number for p in projects)
-    total_unsupported_value = sum(p.unsupported_transactions_value for p in projects)
-
-    # Get top 5 projects by supported transaction value
-    top_projects = projects[:5]
-
-    total_projects = projects.count()
-
-    # Prepare data for the dashboard
-    context = {
-        'total_supported_transactions': total_supported_transactions,
-        'total_supported_value': total_supported_value,
-        'total_unsupported_transactions': total_unsupported_transactions,
-        'total_unsupported_value': total_unsupported_value,
-        'top_projects': top_projects,
-        'total_projects': total_projects,
-    }
-
-    return render(request, 'project_templates/landing_dashboard.html', context)
-
-
-# Project dashboard view
-@login_required
-def view_project_dashboard(request):
-    projects = Project.objects.all()
-
-    context = {
-        'projects': projects,
-        # 'summary_data': summary_data, # Pass the summary if calculated here
-    }
-    return render(request, 'project_templates/view_project_dashboard.html', context)
-
-
-def _get_aggregated_data(sql_server_db: str, project_name: str) -> Dict:
-    """Get aggregated transaction data from a specific SQL Server database
-
-    Args:
-        sql_server_db: The database alias/name in Django's settings
-        project_name: The name of the project to sync
-
-    Returns:
-        Dict containing aggregated transaction data
-    """
-    # Get supporting documents for this project
-    supporting_docs = SupportingDocument.objects.filter(
-        project__project_name=project_name
-    ).values('batchid', 'supported')
-
-    # Create a mapping of batchid to supported status
-    batchid_support_map = {doc['batchid']: doc['supported'] for doc in supporting_docs}
-    supported_batchnbrs = [batchid for batchid, supported in batchid_support_map.items() if supported]
-    # Note: unsupported transactions are determined by NOT being in the supported list
-    print("Supported batch numbers:", supported_batchnbrs)
-
-    # Verify the mapping exists for this project and database
+def projects_overview(request):
+    """Main dashboard view - loads immediately with skeleton"""
+    # Get filter options quickly (these should be fast queries)
     try:
-        mapping = DatabaseMapping.objects.get(
-            project_name=project_name,
-            sql_server_db=sql_server_db,
-            is_active=True
-        )
-    except DatabaseMapping.DoesNotExist:
-        logger.error(f"No active database mapping found for project {project_name} in database {sql_server_db}")
-        return {
-            'supported_transactions_number': 0,
-            'supported_transactions_value': Decimal('0'),
-            'unsupported_transactions_number': 0,
-            'unsupported_transactions_value': Decimal('0')
-        }
+        available_years = SupportingDocument.objects.values_list(
+            'fiscal_year', flat=True
+        ).distinct().order_by('-fiscal_year')
 
-    # For this implementation, we assume project_name corresponds to companyid in the glpost table
-    database = DatabaseMapping.objects.get(project_name=project_name)
-    company_id = database.sql_server_db
+        available_periods = SupportingDocument.objects.values_list(
+            'fiscal_period', flat=True
+        ).distinct().order_by('fiscal_period')
+    except Exception as e:
+        print(f"Error fetching filter options: {str(e)}")
+        available_years = []
+        available_periods = []
 
-    # Build the SQL query
-    if supporting_docs.exists():  # Only proceed if there are supporting documents
-        # For double-entry accounting, we need to handle the positive and negative entries
-        # We'll count distinct batch/entry combinations and sum the absolute values of transactions
+    # Get current filter values
+    fiscal_year = request.GET.get('fiscal_year', '')
+    fiscal_period = request.GET.get('fiscal_period', '')
+    search_query = request.GET.get('search', '')
 
-        # Build conditions for supported transactions
-        if supported_batchnbrs:
-            supported_placeholders = ','.join(['%s'] * len(supported_batchnbrs))
-            supported_condition = f"batchnbr IN ({supported_placeholders})"
-            supported_count_query = f"""
-                SELECT COUNT(DISTINCT batchnbr + '-' + entrynbr) 
-                FROM glpost 
-                WHERE {supported_condition} AND companyid = %s AND transamt > 0
-            """
-            supported_value_query = f"""
-                SELECT SUM(ABS(transamt)) 
-                FROM glpost 
-                WHERE {supported_condition} AND companyid = %s AND transamt > 0
-            """
-            supported_params = supported_batchnbrs + [company_id]
-            supported_value_params = supported_batchnbrs + [company_id]
-        else:
-            supported_count_query = "SELECT 0"
-            supported_value_query = "SELECT 0"
-            supported_params = []
-            supported_value_params = []
+    context = {
+        'selected_fiscal_year': fiscal_year,
+        'selected_fiscal_period': fiscal_period,
+        'search_query': search_query,
+        'available_years': available_years,
+        'available_periods': available_periods,
+    }
 
-        # Build conditions for unsupported transactions (any batch NOT in supported list)
-        if supported_batchnbrs:
-            unsupported_placeholders = ','.join(['%s'] * len(supported_batchnbrs))
-            unsupported_condition = f"batchnbr NOT IN ({unsupported_placeholders})"
-            unsupported_count_query = f"""
-                SELECT COUNT(DISTINCT batchnbr + '-' + entrynbr) 
-                FROM glpost 
-                WHERE {unsupported_condition} AND companyid = %s AND transamt > 0
-            """
-            unsupported_value_query = f"""
-                SELECT SUM(ABS(transamt)) 
-                FROM glpost 
-                WHERE {unsupported_condition} AND companyid = %s AND transamt > 0
-            """
-            unsupported_params = supported_batchnbrs + [company_id]
-            unsupported_value_params = supported_batchnbrs + [company_id]
-        else:
-            # If no supported batches, all batches are unsupported
-            unsupported_count_query = """
-                SELECT COUNT(DISTINCT batchnbr + '-' + entrynbr) 
-                FROM glpost 
-                WHERE companyid = %s AND transamt > 0
-            """
-            unsupported_value_query = """
-                SELECT SUM(ABS(transamt)) 
-                FROM glpost 
-                WHERE companyid = %s AND transamt > 0
-            """
-            unsupported_params = [company_id]
-            unsupported_value_params = [company_id]
-
-        # Connect to the specific SQL Server database
-        connection = connections[sql_server_db]
-
-        supported_count = 0
-        supported_value = Decimal('0')
-        unsupported_count = 0
-        unsupported_value = Decimal('0')
-
-        with connection.cursor() as cursor:
-            try:
-                # Execute queries and get results
-                if supported_params:
-                    cursor.execute(supported_count_query, supported_params)
-                    supported_count = cursor.fetchone()[0] or 0
-
-                    cursor.execute(supported_value_query, supported_value_params)
-                    supported_value = Decimal(str(cursor.fetchone()[0] or 0))
-
-                if unsupported_params:
-                    cursor.execute(unsupported_count_query, unsupported_params)
-                    unsupported_count = cursor.fetchone()[0] or 0
-
-                    cursor.execute(unsupported_value_query, unsupported_value_params)
-                    unsupported_value = Decimal(str(cursor.fetchone()[0] or 0))
-
-                return {
-                    'supported_transactions_number': supported_count,
-                    'supported_transactions_value': supported_value,
-                    'unsupported_transactions_number': unsupported_count,
-                    'unsupported_transactions_value': unsupported_value
-                }
-            except Exception as e:
-                logger.error(f"Error querying {sql_server_db} for project {project_name}: {str(e)}")
-                return {
-                    'supported_transactions_number': 0,
-                    'supported_transactions_value': Decimal('0'),
-                    'unsupported_transactions_number': 0,
-                    'unsupported_transactions_value': Decimal('0')
-                }
-    else:
-        # No supporting documents for this project
-        return {
-            'supported_transactions_number': 0,
-            'supported_transactions_value': Decimal('0'),
-            'unsupported_transactions_number': 0,
-            'unsupported_transactions_value': Decimal('0')
-        }
+    return render(request, 'project_templates/landing_dashboard.html', context)
 
 
-class TransactionSyncService:
-    def __init__(self):
-        self.mysql_db = 'default'  # Your MySQL database alias
+def projects_data_api(request):
+    """API endpoint for fetching project data asynchronously"""
+    try:
+        fiscal_year = request.GET.get('fiscal_year', '')
+        fiscal_period = request.GET.get('fiscal_period', '')
+        search_query = request.GET.get('search', '')
 
-    def sync_all_projects(self, use_threading=True, max_workers=5):
-        """Sync all projects from all SQL Server databases"""
-        logger.info("Starting sync for all projects")
+        # Get all projects
+        projects_queryset = Project.objects.all()
 
-        # Get all active database mappings
-        mappings = DatabaseMapping.objects.filter(is_active=True)
-
-        if use_threading:
-            return self._sync_with_threading(mappings, max_workers)
-        else:
-            return self._sync_sequential(mappings)
-
-    def sync_single_project(self, project_name: str, sql_server_db: str):
-        """Sync a single project from a specific SQL Server database"""
-        logger.info(f"Syncing project {project_name} from {sql_server_db}")
-
-        try:
-            # Get aggregated data from SQL Server
-            aggregated_data = _get_aggregated_data(sql_server_db, project_name)
-
-            # Update MySQL with aggregated data
-            self._update_project_data(project_name, aggregated_data)
-
-            logger.info(f"Successfully synced {project_name}")
-            return True
-
-        except Exception as e:
-            logger.error(f"Error syncing {project_name}: {str(e)}")
-            return False
-
-    def _sync_with_threading(self, mappings, max_workers):
-        """Sync multiple projects concurrently"""
-        results = []
-
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit sync tasks
-            future_to_mapping = {
-                executor.submit(self.sync_single_project, mapping.project_name, mapping.sql_server_db): mapping
-                for mapping in mappings
-            }
-
-            # Process completed tasks
-            for future in as_completed(future_to_mapping):
-                mapping = future_to_mapping[future]
-                try:
-                    result = future.result()
-                    results.append({
-                        'project': mapping.project_name,
-                        'database': mapping.sql_server_db,
-                        'success': result
-                    })
-                except Exception as e:
-                    logger.error(f"Exception for {mapping.project_name}: {str(e)}")
-                    results.append({
-                        'project': mapping.project_name,
-                        'database': mapping.sql_server_db,
-                        'success': False,
-                        'error': str(e)
-                    })
-
-        return results
-
-    def _sync_sequential(self, mappings):
-        """Sync projects one by one"""
-        results = []
-
-        for mapping in mappings:
-            result = self.sync_single_project(mapping.project_name, mapping.sql_server_db)
-            results.append({
-                'project': mapping.project_name,
-                'database': mapping.sql_server_db,
-                'success': result
-            })
-
-        return results
-
-    @transaction.atomic(using='default')
-    def _update_project_data(self, project_name: str, aggregated_data: Dict):
-        """Update project data in MySQL database"""
-
-        # Start sync log
-        project, created = Project.objects.using(self.mysql_db).get_or_create(
-            project_name=project_name,
-            defaults={'description': f'Auto-created for {project_name}'}
-        )
-
-        sync_log = SyncLog.objects.using(self.mysql_db).create(
-            project=project,
-            status='running'
-        )
-
-        try:
-            # Update project with new data
-            project.supported_transactions_number = aggregated_data['supported_transactions_number']
-            project.supported_transactions_value = aggregated_data['supported_transactions_value']
-            project.unsupported_transactions_number = aggregated_data['unsupported_transactions_number']
-            project.unsupported_transactions_value = aggregated_data['unsupported_transactions_value']
-            project.last_synced = datetime.now()
-            project.sync_status = 'completed'
-            project.save(using=self.mysql_db)
-
-            # Update sync log
-            sync_log.status = 'completed'
-            sync_log.sync_completed = datetime.now()
-            sync_log.records_processed = (
-                    aggregated_data['supported_transactions_number'] +
-                    aggregated_data['unsupported_transactions_number']
+        # Apply search filter
+        if search_query:
+            projects_queryset = projects_queryset.filter(
+                Q(project_name__icontains=search_query) |
+                Q(description__icontains=search_query)
             )
-            sync_log.save(using=self.mysql_db)
 
-            logger.info(f"Updated project {project_name} with {sync_log.records_processed} transactions")
+        # For better performance, prefetch related data
+        projects_queryset = projects_queryset.prefetch_related('supportingdocument_set')
 
+        # Calculate totals and get project stats
+        total_projects = projects_queryset.count()
+        total_supported_transactions = 0
+        total_unsupported_transactions = 0
+        total_supported_value = 0
+        total_unsupported_value = 0
+        fully_supported_projects = 0
+
+        project_stats = []
+
+        # Process projects with progress updates
+        for i, project in enumerate(projects_queryset):
+            try:
+                stats = project.get_stats(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
+
+                total_supported_transactions += stats['supported_count']
+                total_unsupported_transactions += stats['unsupported_count']
+                total_supported_value += stats['supported_value']
+                total_unsupported_value += stats['unsupported_value']
+
+                # Check if project is fully supported
+                if stats['unsupported_count'] == 0 and stats['total_count'] > 0:
+                    fully_supported_projects += 1
+
+                project_data = {
+                    'project_name': project.project_name,
+                    'supported_transactions_number': stats['supported_count'],
+                    'unsupported_transactions_number': stats['unsupported_count'],
+                    'supported_transactions_value': stats['supported_value'],
+                    'unsupported_transactions_value': stats['unsupported_value'],
+                    'total_transactions': stats['total_count'],
+                    'is_fully_supported': stats['unsupported_count'] == 0 and stats['total_count'] > 0,
+                    # Add URL for project detail
+                    'project_url': f"/projects/project/{project.project_name}/"
+                }
+                project_stats.append(project_data)
+            except Exception as e:
+                print(f"Error calculating stats for project {project.project_name}: {str(e)}")
+                continue
+
+        # Sort by total transactions
+        project_stats.sort(key=lambda x: x['total_transactions'], reverse=True)
+
+        # Get top 10 projects
+        top_projects = project_stats[:10]
+
+        # Return JSON response
+        from django.http import JsonResponse
+        return JsonResponse({
+            'success': True,
+            'data': {
+                'total_projects': total_projects,
+                'fully_supported_projects': fully_supported_projects,
+                'total_supported_transactions': total_supported_transactions,
+                'total_unsupported_transactions': total_unsupported_transactions,
+                'total_supported_value': total_supported_value,
+                'total_unsupported_value': total_unsupported_value,
+                'top_projects': top_projects,
+            }
+        })
+
+    except Exception as e:
+        from django.http import JsonResponse
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+def full_project_dashboard(request):
+    """Full dashboard with client-side loading and skeleton content"""
+
+    # Check if this is an AJAX request for API data
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Redirect to API endpoint for AJAX requests
+        return project_dashboard_api(request)
+
+    # For regular page loads, provide minimal context for skeleton loading
+    try:
+        # Get available fiscal years and periods for filters
+        available_years = SupportingDocument.objects.values_list(
+            'fiscal_year', flat=True
+        ).distinct().order_by('-fiscal_year')
+
+        available_periods = SupportingDocument.objects.values_list(
+            'fiscal_period', flat=True
+        ).distinct().order_by('fiscal_period')
+    except Exception as e:
+        logger.error(f"Error fetching filter options: {str(e)}")
+        available_years = []
+        available_periods = []
+
+    # Minimal context - no project data loaded server-side
+    context = {
+        'selected_fiscal_year': request.GET.get('fiscal_year', ''),
+        'selected_fiscal_period': request.GET.get('fiscal_period', ''),
+        'search_query': request.GET.get('search', ''),
+        'available_years': available_years,
+        'available_periods': available_periods,
+        'sort_by': request.GET.get('sort', 'project_name'),
+        'order': request.GET.get('order', 'asc'),
+        'api_endpoint': reverse('main_app:projects_data_api'),
+    }
+
+    return render(request, 'project_templates/view_project_dashboard.html', context)
+def project_dashboard_api(request):
+    """API endpoint for project dashboard data"""
+    try:
+        # Get filter parameters
+        fiscal_year = request.GET.get('fiscal_year', '')
+        fiscal_period = request.GET.get('fiscal_period', '')
+        search_query = request.GET.get('search', '')
+
+        # Get all projects with prefetch for better performance
+        projects_queryset = Project.objects.all().select_related()
+
+        # Apply search filter if provided
+        if search_query:
+            projects_queryset = projects_queryset.filter(
+                Q(project_name__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+
+        # Calculate stats for all projects
+        project_stats = []
+        failed_projects = []
+        fully_supported_projects = 0
+
+        for project in projects_queryset:
+            try:
+                # Get project statistics
+                stats = project.get_stats(fiscal_year=fiscal_year, fiscal_period=fiscal_period)
+
+                # Check if project is fully supported
+                is_fully_supported = stats['unsupported_count'] == 0 and stats['total_count'] > 0
+                if is_fully_supported:
+                    fully_supported_projects += 1
+
+                # Prepare project data
+                project_data = {
+                    'project_name': project.project_name,
+                    'description': project.description,
+                    'supported_transactions_number': stats['supported_count'],
+                    'unsupported_transactions_number': stats['unsupported_count'],
+                    'supported_transactions_value': stats['supported_value'],
+                    'unsupported_transactions_value': stats['unsupported_value'],
+                    'total_transactions': stats['total_count'],
+                    'sync_status': project.sync_status,
+                    'last_synced': project.last_synced.isoformat() if project.last_synced else None,
+                    'is_fully_supported': is_fully_supported,
+                    'project_url': f"/projects/project/{project.project_name}/"
+                }
+                project_stats.append(project_data)
+
+            except Exception as e:
+                logger.error(f"Error calculating stats for project {project.project_name}: {str(e)}")
+                failed_projects.append(project.project_name)
+
+                # Add project with zero stats to maintain consistency
+                project_data = {
+                    'project_name': project.project_name,
+                    'description': project.description,
+                    'supported_transactions_number': 0,
+                    'unsupported_transactions_number': 0,
+                    'supported_transactions_value': 0,
+                    'unsupported_transactions_value': 0,
+                    'total_transactions': 0,
+                    'sync_status': project.sync_status,
+                    'last_synced': project.last_synced.isoformat() if project.last_synced else None,
+                    'has_error': True,
+                    'is_fully_supported': False,
+                    'project_url': reverse('transactions:project_dashboard', args=[project.project_name])
+                }
+                project_stats.append(project_data)
+
+        # Sort projects if requested
+        sort_by = request.GET.get('sort', 'project_name')
+        reverse_sort = request.GET.get('order', 'asc') == 'desc'
+
+        # Define sortable fields
+        numeric_fields = [
+            'supported_transactions_number',
+            'unsupported_transactions_number',
+            'supported_transactions_value',
+            'unsupported_transactions_value',
+            'total_transactions'
+        ]
+
+        string_fields = ['project_name', 'description', 'sync_status']
+
+        try:
+            if sort_by in numeric_fields:
+                project_stats.sort(
+                    key=lambda x: x.get(sort_by, 0),
+                    reverse=reverse_sort
+                )
+            elif sort_by in string_fields:
+                project_stats.sort(
+                    key=lambda x: x.get(sort_by, ''),
+                    reverse=reverse_sort
+                )
+            elif sort_by == 'last_synced':
+                project_stats.sort(
+                    key=lambda x: x.get('last_synced', '') or '',
+                    reverse=reverse_sort
+                )
+            else:
+                # Default to project_name if invalid sort field
+                project_stats.sort(
+                    key=lambda x: x.get('project_name', ''),
+                    reverse=reverse_sort
+                )
         except Exception as e:
-            # Update sync log with error
-            sync_log.status = 'failed'
-            sync_log.error_message = str(e)
-            sync_log.save(using=self.mysql_db)
+            logger.error(f"Error sorting projects: {str(e)}")
+            # Fall back to default sorting
+            project_stats.sort(key=lambda x: x.get('project_name', ''))
 
-            project.sync_status = 'error'
-            project.save(using=self.mysql_db)
-
-            raise
-
-    def get_sync_status(self) -> Dict:
-        """Get overall sync status"""
-        projects = Project.objects.using(self.mysql_db).all()
-
-        status = {
-            'total_projects': projects.count(),
-            'completed': projects.filter(sync_status='completed').count(),
-            'pending': projects.filter(sync_status='pending').count(),
-            'in_progress': projects.filter(sync_status='in_progress').count(),
-            'error': projects.filter(sync_status='error').count(),
-            'last_sync_times': {}
+        # Prepare response data
+        response_data = {
+            'projects': project_stats,
+            'summary': {
+                'total_projects': len(project_stats),
+                'fully_supported_projects': fully_supported_projects,
+                'failed_projects': failed_projects,
+                'total_supported_transactions': sum(p['supported_transactions_number'] for p in project_stats),
+                'total_unsupported_transactions': sum(p['unsupported_transactions_number'] for p in project_stats),
+                'total_supported_value': sum(p['supported_transactions_value'] for p in project_stats),
+                'total_unsupported_value': sum(p['unsupported_transactions_value'] for p in project_stats),
+            },
+            'filters': {
+                'fiscal_year': fiscal_year,
+                'fiscal_period': fiscal_period,
+                'search_query': search_query,
+                'sort_by': sort_by,
+                'order': request.GET.get('order', 'asc')
+            }
         }
 
-        # Get last sync times for each project
-        for project in projects:
-            status['last_sync_times'][project.project_name] = project.last_synced
+        return JsonResponse(response_data)
 
-        return status
+    except Exception as e:
+        logger.error(f"Error in project_dashboard_api: {str(e)}")
+        return JsonResponse({
+            'error': 'An error occurred while fetching project data',
+            'projects': [],
+            'summary': {
+                'total_projects': 0,
+                'fully_supported_projects': 0,
+                'failed_projects': [],
+                'total_supported_transactions': 0,
+                'total_unsupported_transactions': 0,
+                'total_supported_value': 0,
+                'total_unsupported_value': 0,
+            }
+        }, status=500)
+@login_required
+def ajax_project_search(request):
+    """AJAX endpoint for project search suggestions"""
+    query = request.GET.get('q', '')
+
+    if len(query) < 2:
+        return JsonResponse({'results': []})
+
+    projects = Project.objects.filter(
+        Q(project_name__icontains=query) |
+        Q(description__icontains=query)
+    )[:10]
+
+    results = [
+        {
+            'id': project.project_id,
+            'name': project.project_name,
+            'description': project.description[:100] + '...' if len(project.description) > 100 else project.description
+        }
+        for project in projects
+    ]
+
+    return JsonResponse({'results': results})

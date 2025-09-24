@@ -3,10 +3,11 @@ from django import template
 register = template.Library()
 
 
+
 @register.filter
 def sub(value, arg):
-    """Subtracts the arg from the value"""
+    """Subtract arg from value"""
     try:
         return float(value) - float(arg)
     except (ValueError, TypeError):
-        return value
+        return 0

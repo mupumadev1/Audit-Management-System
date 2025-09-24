@@ -8,12 +8,10 @@ from django.contrib.auth.admin import UserAdmin
 
 
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = (
-        'project_name', 'supported_transactions_number', 'supported_transactions_value',
-        'unsupported_transactions_number',
-        'unsupported_transactions_value')
-    list_filter = ('supported_transactions_value', 'unsupported_transactions_value')
-
+    def __init__(self, model, admin_site):
+        # Dynamically set list_display to all field names
+        self.list_display = [field.name for field in model._meta.fields]
+        super().__init__(model, admin_site)
 
 class SyncLogAdmin(admin.ModelAdmin):
     def __init__(self, model, admin_site):
@@ -27,6 +25,7 @@ class DatabaseMappingAdmin(admin.ModelAdmin):
         # Dynamically set list_display to all field names
         self.list_display = [field.name for field in model._meta.fields]
         super().__init__(model, admin_site)
+
 
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(SyncLog, SyncLogAdmin)

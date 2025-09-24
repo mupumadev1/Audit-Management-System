@@ -24,7 +24,7 @@ from audit_management_system import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include('main_app.urls',namespace="main_app")),
-    path("project/", include('transactions.urls',namespace="transactions")),
+    path("projects/", include('transactions.urls',namespace="transactions")),
     path('reports/', include('reports.urls', namespace='reports')),
 ]
 if settings.DEBUG:
